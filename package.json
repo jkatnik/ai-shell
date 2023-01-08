@@ -1,0 +1,33 @@
+{
+  "name": "ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/ai.js",
+  "scripts": {
+    "install": "tsc",
+    "start": "tsc && node dist/ai.js",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "ai": "./dist/ai.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "module": "2022",
+  "devDependencies": {
+    "@types/chalk": "^2.2.0",
+    "@types/inquirer": "^8.2.5",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^18.11.18",
+    "eslint": "^8.30.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.5",
+    "js-yaml": "^4.1.0",
+    "openai": "^3.1.0"
+  }
+}
