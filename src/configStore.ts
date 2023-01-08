@@ -9,7 +9,7 @@ export class ConfigStore {
     config: Config;
 
     constructor() {
-        this.homeDir = path.resolve(process.env['HOME'] || process.env['USERPROFILE'] || '');
+        this.homeDir = path.resolve(process.env['HOME'] || process.env['USERPROFILE']);
         const yamlString = fs.readFileSync(`${this.homeDir}/.config/ai/config.yaml`, 'utf8');
         this.config = yaml.load(yamlString) as Config;
     }

@@ -7,8 +7,6 @@ import { exec } from 'child_process'
 import inquirer from 'inquirer'
 
 async function run() {
-  promptExample()
-
   let configStore = new ConfigStore()
   const oaiConfig = new oai.Configuration({
     apiKey: configStore.useNextKey()
@@ -24,7 +22,14 @@ async function run() {
       prompt: `Write single bash command. Nothing else! ${userInput}`,
     });
     const command = completion.data.choices[0].text.trim()
-    execute(command)
+    console.log(chalk.grey('AI: ') + chalk.white.bold(command))
+
+    const answer = await promptExample()
+
+    if (answer === 'execute') {
+      execute(command)
+    }
+
   } catch (error) {
     if (error.response) {
       console.log(error.response.status);
@@ -60,22 +65,25 @@ function execute(command: string) {
   })
 }
 
-async function promptExample() {
-  inquirer.prompt([
+async function promptExample(): Promise<string> {
+  return inquirer.prompt([
       {
         type: 'list',
         name: 'theme',
         message: 'What to do?',
         choices: [
-          '[E]xecute',
+          {
+            name: 'Execute',
+            value: 'execute',
+          },
           'Abort',
           'Just type - don\'t execute',
           'Extend input'
         ],
       }
     ])
-    .then((answers) => {
-      console.log(JSON.stringify(answers, null, '  '));
+    .then((answer) => {
+      return answer.theme
     });
 }
 
