@@ -31,6 +31,20 @@ async function run(): Promise<void> {
     userInput = userInput.replace('-n', '').trim()
   }
 
+  if (userInput.startsWith('-g')) {
+    userInput = userInput.replace('-g', '').trim()
+
+    if (!userInput) {
+      userInput = getLastQuestionFromHistory()
+    }
+
+    const params = new URLSearchParams({ q: userInput }).toString()
+    const uri = `https://www.google.pl/search?${params}`
+    const command = `open "${uri}" > /dev/null 2>&1`
+    saveResultForBashWrapper(command);
+    return
+  }
+
   if (userInput === '') {
     console.log(chalk.yellow('No input provided'));
     saveResultForBashWrapper('aborted');
@@ -141,10 +155,8 @@ const removePrefix = (text: string): string => text.replace(/^(H|AI): /, '');
 function buildContext(freeTokens: number): string {
   let context = '';
   let usedTokens = 0;
-  const history = fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
-    .map(text => removePrefix(text))
-    .map(text => parseTextFromHistory(text))
-    .filter(text => text.trim() !== '')
+  const history = loadHistory()
+    .map(entry => entry.text)
 
   // remove current question
   history.pop();
@@ -159,6 +171,20 @@ function buildContext(freeTokens: number): string {
   }
   return context
 }
+
+function getLastQuestionFromHistory(): string {
+  const history = loadHistory()
+    .filter(entry => entry.type === 'H')
+
+  return history.pop().text;
+}
+
+function loadHistory() {
+  return fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
+  .map(text => parseTextFromHistory(text))
+  .filter(entry => entry.text !== '')
+}
+
 
 const countTokens = (question: string) => encode(question).length
 
