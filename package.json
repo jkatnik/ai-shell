@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "ai": "./dist/ai.js"
+    "ai-autocomplete": "./dist/ai.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "chalk": "^4.1.2",
+    "gpt-3-encoder": "^1.1.3",
     "inquirer": "^8.2.5",
     "js-yaml": "^4.1.0",
     "openai": "^3.1.0"

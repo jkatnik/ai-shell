@@ -1,0 +1,10 @@
+function ai() {
+  history -s "ai $@"
+  ai-autocomplete $@
+
+  COMMAND="$(< /tmp/ai-autocomplete.out)"
+  if [ "$COMMAND" != "aborted" ]; then
+      $COMMAND
+      history -s $COMMAND
+  fi
+}
