@@ -45,7 +45,7 @@ async function run(): Promise<void> {
       const command = await askOpenAiWithContext(userInput)
       saveAiOutputInHistory(command)
 
-      console.log(chalk.grey('AI: ') + chalk.white.bold(command))
+      console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
       const answer = await promptIfUserAcceptsCommand()
       if (answer === 'accept') {
         saveResultForBashWrapper(command)
