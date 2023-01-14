@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
-import { getHome } from './fileUtils';
+import { getHome } from './util/fileUtil';
 import { prompt } from 'inquirer';
 
 

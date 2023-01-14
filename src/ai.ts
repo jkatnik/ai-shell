@@ -9,18 +9,16 @@ import * as fs from 'fs';
 import {
     clearHistory,
     getHistoryPath,
-    parseTextFromHistory,
-    prepareTextForSave,
     saveResultForBashWrapper
-} from './fileUtils';
-import {encode} from 'gpt-3-encoder';
+} from './util/fileUtil';
+import {parseTextFromHistory, prepareTextForSave} from "./util/historyUtil";
+import {countTokens} from "./util/tokenUtil";
+import {checkInput} from "./cmd";
 
 async function askOpenAI(done: boolean, userInput: string, openAi: OpenAIApi) {
   try {
     while (!done) {
-      console.log('ask')
       const command = await askOpenAiWithContext(userInput, openAi)
-      console.log('answer', command)
       saveAiOutputInHistory(command)
 
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
@@ -48,6 +46,8 @@ async function askOpenAI(done: boolean, userInput: string, openAi: OpenAIApi) {
 }
 
 async function run(openAi: OpenAIApi): Promise<void> {
+    checkInput()
+    return;
     let userInput = getCmdLineInput()
 
     if (userInput.startsWith('-n')) {
@@ -136,11 +136,8 @@ async function refineUserInput(userInput: string): Promise<string> {
 async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promise<string> {
     const tokensForResponse = 200
     const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`
-    console.log('currentQuestion', currentQuestion)
     const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion)
-    console.log('freeTokens', freeTokens)
     const context = buildContext(freeTokens)
-    console.log('context', context)
 
     const prompt = context + currentQuestion
     const completion = await openAi.createCompletion({
@@ -149,21 +146,15 @@ async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promi
         temperature: 0,
         max_tokens: tokensForResponse
     });
-    console.log('completion', completion.data.choices[0].text)
 
     return completion.data.choices[0].text.trim();
 }
 
-const removePrefix = (text: string): string => text.replace(/^(H|AI): /, '');
-
 function buildContext(freeTokens: number): string {
     let context = '';
     let usedTokens = 0;
-    console.log('load history')
     const history = loadHistory()
         .map(entry => entry.text)
-
-    console.log('history', JSON.stringify(history))
 
     // remove current question
     history.pop();
@@ -194,7 +185,6 @@ function loadHistory() {
 }
 
 
-const countTokens = (question: string) => encode(question).length
 
 let configStore = new ConfigStore();
 configStore.load().then(() => {
