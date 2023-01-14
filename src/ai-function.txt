@@ -7,7 +7,6 @@ function ai() {
   COMMAND="$(< /tmp/ai-autocomplete.out)"
   PID="$(< /tmp/ai.pid)"
   if [ "$COMMAND" != "aborted" ]; then
-      history -s $COMMAND
-      (sleep 5 && echo -n "$COMMAND" >> /proc/$PID/fd/0) &
+      screen -X stuff $COMMAND
   fi
 }
