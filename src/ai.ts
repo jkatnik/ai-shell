@@ -15,6 +15,38 @@ import {
 } from './fileUtils';
 import {encode} from 'gpt-3-encoder';
 
+async function askOpenAI(done: boolean, userInput: string, openAi: OpenAIApi) {
+  try {
+    while (!done) {
+      console.log('ask')
+      const command = await askOpenAiWithContext(userInput, openAi)
+      console.log('answer', command)
+      saveAiOutputInHistory(command)
+
+      console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
+      const answer = await promptIfUserAcceptsCommand()
+      if (answer === 'accept') {
+        saveResultForBashWrapper(command)
+        done = true
+      } else if (answer === 'refine') {
+        userInput = await refineUserInput(userInput)
+        saveUserInputInHistory(userInput)
+      } else {
+        saveResultForBashWrapper('aborted');
+        done = true
+      }
+    }
+  } catch (error) {
+    if (error.response) {
+      console.log(error.response.status);
+      console.log(error.response.data);
+    } else {
+      console.log(error.message);
+    }
+  }
+  return userInput;
+}
+
 async function run(openAi: OpenAIApi): Promise<void> {
     let userInput = getCmdLineInput()
 
@@ -47,35 +79,7 @@ async function run(openAi: OpenAIApi): Promise<void> {
 
     saveUserInputInHistory(userInput);
     let done = false;
-
-    try {
-        while (!done) {
-            console.log('ask')
-            const command = await askOpenAiWithContext(userInput, openAi)
-            console.log('answer', command)
-            saveAiOutputInHistory(command)
-
-            console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
-            const answer = await promptIfUserAcceptsCommand()
-            if (answer === 'accept') {
-                saveResultForBashWrapper(command)
-                done = true
-            } else if (answer === 'refine') {
-                userInput = await refineUserInput(userInput)
-                saveUserInputInHistory(userInput)
-            } else {
-                saveResultForBashWrapper('aborted');
-                done = true
-            }
-        }
-    } catch (error) {
-        if (error.response) {
-            console.log(error.response.status);
-            console.log(error.response.data);
-        } else {
-            console.log(error.message);
-        }
-    }
+    await askOpenAI(done, userInput, openAi);
 }
 
 function saveUserInputInHistory(userInput: string): void {
