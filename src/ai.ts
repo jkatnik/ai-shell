@@ -9,28 +9,39 @@ import * as fs from 'fs';
 import { clearHistory, getHistoryPath, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
 import { encode } from 'gpt-3-encoder';
 
+enum CmdLineOption {
+  HELP, NEW_CONTEXT, SEARCH_IN_GOOGLE, COMMAND
+}
+function detectOption(userInput: string): CmdLineOption {
+  if (userInput.startsWith('-h') || userInput.startsWith('--help')) {
+    return CmdLineOption.HELP
+  }
+
+  if (userInput.startsWith('-n') || userInput.startsWith('--new-context')) {
+    return CmdLineOption.NEW_CONTEXT
+  }
+
+  if (userInput.startsWith('-g') || userInput.startsWith('--google')) {
+    return CmdLineOption.SEARCH_IN_GOOGLE
+  }
+
+  return CmdLineOption.COMMAND
+}
 async function run(openAi: OpenAIApi): Promise<void> {
   let userInput = getCmdLineInput()
 
-  if (userInput.startsWith('-n')) {
-    // new context - removing history
-    clearHistory()
-
-    userInput = userInput.replace('-n', '').trim()
-  }
-
-  if (userInput.startsWith('-g')) {
-    userInput = userInput.replace('-g', '').trim()
-
-    if (!userInput) {
-      userInput = getLastQuestionFromHistory()
-    }
-
-    const params = new URLSearchParams({ q: userInput }).toString()
-    const uri = `https://www.google.pl/search?${params}`
-    const command = `open "${uri}" > /dev/null 2>&1`
-    saveResultForBashWrapper(command);
-    return
+  const option = detectOption(userInput)
+  switch (option) {
+    case CmdLineOption.HELP:
+      printHelp();
+      return;
+    case CmdLineOption.SEARCH_IN_GOOGLE:
+      searchLatestQueryInGoogle(userInput);
+      return;
+    case CmdLineOption.NEW_CONTEXT:
+      clearHistory();
+      userInput = userInput.replace('-n', '').trim() // continue as COMMAND
+      break;
   }
 
   if (userInput === '') {
@@ -40,34 +51,16 @@ async function run(openAi: OpenAIApi): Promise<void> {
   }
 
   saveUserInputInHistory(userInput);
-  let done = false;
-
-  try {
-    while(!done) {
+    outer: while(true) {
       const command = await askOpenAiWithContext(userInput, openAi)
-      saveAiOutputInHistory(command)
-
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
-      const answer = await promptIfUserAcceptsCommand()
-      if (answer === 'accept') {
-        saveResultForBashWrapper(command)
-        done = true
-      } else if (answer === 'refine') {
-        userInput = await refineUserInput(userInput)
-        saveUserInputInHistory(userInput)
-      } else {
-        saveResultForBashWrapper('aborted');
-        done = true
+
+      switch (await promptIfUserAcceptsCommand()) {
+        case 'Accept': saveResultForBashWrapper(command); break
+        case 'Refine': userInput = await refineUserInput(userInput); break
+        case 'Cancel': saveResultForBashWrapper('aborted'); break outer;
       }
     }
-  } catch (error) {
-    if (error.response) {
-      console.log(error.response.status);
-      console.log(error.response.data);
-    } else {
-      console.log(error.message);
-    }
-  }
 }
 
 function saveUserInputInHistory(userInput: string): void {
@@ -87,23 +80,14 @@ function getCmdLineInput() {
   return args.join(' ').trim()
 }
 
-async function promptIfUserAcceptsCommand(): Promise<string> {
+type UserAction = 'Accept' | 'Refine' | 'Cancel'
+async function promptIfUserAcceptsCommand(): Promise<UserAction> {
   return inquirer.prompt([
       {
         type: 'list',
         name: 'theme',
         message: 'What to do?',
-        choices: [
-          {
-            name: 'Accept',
-            value: 'accept',
-          },
-          {
-            name: 'Refine',
-            value: 'refine',
-          },
-          'Cancel'
-        ],
+        choices: [ 'Accept', 'Refine', 'Cancel' ],
       }
     ])
     .then((answer) => {
@@ -111,14 +95,17 @@ async function promptIfUserAcceptsCommand(): Promise<string> {
     });
 }
 
-
 async function refineUserInput(userInput: string): Promise<string> {
-  return (await inquirer.prompt([{
+  userInput = (await inquirer.prompt([{
     type: 'input',
     name: 'userInput',
     message: 'Refine your query:',
     default: userInput
   }])).userInput
+
+  saveUserInputInHistory(userInput)
+
+  return userInput
 }
 
 async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promise<string> {
@@ -128,17 +115,26 @@ async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promi
   const context = buildContext(freeTokens)
   const prompt = context + currentQuestion
 
-  const completion = await openAi.createCompletion({
-    model: "text-davinci-003",
-    prompt,
-    temperature: 0,
-    max_tokens: tokensForResponse
-  });
+  try {
+    const completion = await openAi.createCompletion({
+      model: "text-davinci-003",
+      prompt,
+      temperature: 0,
+      max_tokens: tokensForResponse
+    });
 
-  return completion.data.choices[0].text.trim();
+    const command = completion.data.choices[0].text.trim();
+
+    saveAiOutputInHistory(command)
+
+    return command;
+  } catch (error) {
+    printError(error);
+  }
 }
 
 const removePrefix = (text: string): string => text.replace(/^(H|AI): /, '');
+
 
 function buildContext(freeTokens: number): string {
   let context = '';
@@ -173,6 +169,36 @@ function loadHistory() {
   .filter(entry => entry.text !== '')
 }
 
+function searchLatestQueryInGoogle(userInput: string): string {
+  userInput = userInput.replace('-g', '').trim()
+
+  if (!userInput) {
+    userInput = getLastQuestionFromHistory()
+  }
+
+  const params = new URLSearchParams({q: userInput}).toString()
+  const uri = `https://www.google.pl/search?${params}`
+  const command = `open ${uri} > /dev/null 2>&1`
+
+  saveResultForBashWrapper(command);
+  return userInput;
+}
+
+function printHelp(): void {
+  console.log(`Options:
+-n - new context, clears history
+-g - queries google with last command from history
+-h - prints this help`)
+}
+
+function printError(error): void {
+  if (error.response) {
+    console.log(error.response.status);
+    console.log(error.response.data);
+  } else {
+    console.log(error.message);
+  }
+}
 
 const countTokens = (question: string) => encode(question).length
 
