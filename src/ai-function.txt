@@ -5,7 +5,7 @@ function ai() {
 
   COMMAND="$(< /tmp/ai-autocomplete.out)"
   if [ "$COMMAND" != "aborted" ]; then
-      eval $COMMAND
+      eval "$COMMAND"
       history -s $COMMAND
   fi
 }

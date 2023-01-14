@@ -56,7 +56,7 @@ async function run(openAi: OpenAIApi): Promise<void> {
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
 
       switch (await promptIfUserAcceptsCommand()) {
-        case 'Accept': saveResultForBashWrapper(command); break
+        case 'Accept': saveResultForBashWrapper(command); break outer;
         case 'Refine': userInput = await refineUserInput(userInput); break
         case 'Cancel': saveResultForBashWrapper('aborted'); break outer;
       }
@@ -132,9 +132,6 @@ async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promi
     printError(error);
   }
 }
-
-const removePrefix = (text: string): string => text.replace(/^(H|AI): /, '');
-
 
 function buildContext(freeTokens: number): string {
   let context = '';
