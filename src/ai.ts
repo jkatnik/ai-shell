@@ -1,176 +1,192 @@
 #!/usr/bin/env node
 
 import chalk from 'chalk'
-import { ConfigStore } from './configStore'
+import {ConfigStore} from './configStore'
 import * as oai from 'openai'
-import { OpenAIApi } from 'openai'
+import {OpenAIApi} from 'openai'
 import inquirer from 'inquirer'
 import * as fs from 'fs';
-import { clearHistory, getHistoryPath, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
-import { encode } from 'gpt-3-encoder';
+import {
+    clearHistory,
+    getHistoryPath,
+    parseTextFromHistory,
+    prepareTextForSave,
+    saveResultForBashWrapper
+} from './fileUtils';
+import {encode} from 'gpt-3-encoder';
 
 async function run(openAi: OpenAIApi): Promise<void> {
-  let userInput = getCmdLineInput()
+    let userInput = getCmdLineInput()
 
-  if (userInput.startsWith('-n')) {
-    // new context - removing history
-    clearHistory()
+    if (userInput.startsWith('-n')) {
+        // new context - removing history
+        clearHistory()
 
-    userInput = userInput.replace('-n', '').trim()
-  }
-
-  if (userInput.startsWith('-g')) {
-    userInput = userInput.replace('-g', '').trim()
-
-    if (!userInput) {
-      userInput = getLastQuestionFromHistory()
+        userInput = userInput.replace('-n', '').trim()
     }
 
-    const params = new URLSearchParams({ q: userInput }).toString()
-    const uri = `https://www.google.pl/search?${params}`
-    const command = `open "${uri}" > /dev/null 2>&1`
-    saveResultForBashWrapper(command);
-    return
-  }
+    if (userInput.startsWith('-g')) {
+        userInput = userInput.replace('-g', '').trim()
 
-  if (userInput === '') {
-    console.log(chalk.yellow('No input provided'));
-    saveResultForBashWrapper('aborted');
-    return
-  }
+        if (!userInput) {
+            userInput = getLastQuestionFromHistory()
+        }
 
-  saveUserInputInHistory(userInput);
-  let done = false;
+        const params = new URLSearchParams({q: userInput}).toString()
+        const uri = `https://www.google.pl/search?${params}`
+        const command = `open "${uri}" > /dev/null 2>&1`
+        saveResultForBashWrapper(command);
+        return
+    }
 
-  try {
-    while(!done) {
-      const command = await askOpenAiWithContext(userInput, openAi)
-      saveAiOutputInHistory(command)
-
-      console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
-      const answer = await promptIfUserAcceptsCommand()
-      if (answer === 'accept') {
-        saveResultForBashWrapper(command)
-        done = true
-      } else if (answer === 'refine') {
-        userInput = await refineUserInput(userInput)
-        saveUserInputInHistory(userInput)
-      } else {
+    if (userInput === '') {
+        console.log(chalk.yellow('No input provided'));
         saveResultForBashWrapper('aborted');
-        done = true
-      }
+        return
     }
-  } catch (error) {
-    if (error.response) {
-      console.log(error.response.status);
-      console.log(error.response.data);
-    } else {
-      console.log(error.message);
+
+    saveUserInputInHistory(userInput);
+    let done = false;
+
+    try {
+        while (!done) {
+            console.log('ask')
+            const command = await askOpenAiWithContext(userInput, openAi)
+            console.log('answer', command)
+            saveAiOutputInHistory(command)
+
+            console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
+            const answer = await promptIfUserAcceptsCommand()
+            if (answer === 'accept') {
+                saveResultForBashWrapper(command)
+                done = true
+            } else if (answer === 'refine') {
+                userInput = await refineUserInput(userInput)
+                saveUserInputInHistory(userInput)
+            } else {
+                saveResultForBashWrapper('aborted');
+                done = true
+            }
+        }
+    } catch (error) {
+        if (error.response) {
+            console.log(error.response.status);
+            console.log(error.response.data);
+        } else {
+            console.log(error.message);
+        }
     }
-  }
 }
 
 function saveUserInputInHistory(userInput: string): void {
-  const text = prepareTextForSave(userInput)
-  fs.appendFileSync(getHistoryPath(), `H: ${text}\n`);
+    const text = prepareTextForSave(userInput)
+    fs.appendFileSync(getHistoryPath(), `H: ${text}\n`);
 }
 
 function saveAiOutputInHistory(aiOutput: string): void {
-  const text = prepareTextForSave(aiOutput)
-  fs.appendFileSync(getHistoryPath(), `AI: ${text}\n`);
+    const text = prepareTextForSave(aiOutput)
+    fs.appendFileSync(getHistoryPath(), `AI: ${text}\n`);
 }
 
 function getCmdLineInput() {
-  let args = process.argv
-  args.shift() // first is path to nodejs
-  args.shift() // second is path to the script
-  return args.join(' ').trim()
+    let args = process.argv
+    args.shift() // first is path to nodejs
+    args.shift() // second is path to the script
+    return args.join(' ').trim()
 }
 
 async function promptIfUserAcceptsCommand(): Promise<string> {
-  return inquirer.prompt([
-      {
-        type: 'list',
-        name: 'theme',
-        message: 'What to do?',
-        choices: [
-          {
-            name: 'Accept',
-            value: 'accept',
-          },
-          {
-            name: 'Refine',
-            value: 'refine',
-          },
-          'Cancel'
-        ],
-      }
+    return inquirer.prompt([
+        {
+            type: 'list',
+            name: 'theme',
+            message: 'What to do?',
+            choices: [
+                {
+                    name: 'Accept',
+                    value: 'accept',
+                },
+                {
+                    name: 'Refine',
+                    value: 'refine',
+                },
+                'Cancel'
+            ],
+        }
     ])
-    .then((answer) => {
-      return answer.theme
-    });
+        .then((answer) => {
+            return answer.theme
+        });
 }
 
 
 async function refineUserInput(userInput: string): Promise<string> {
-  return (await inquirer.prompt([{
-    type: 'input',
-    name: 'userInput',
-    message: 'Refine your query:',
-    default: userInput
-  }])).userInput
+    return (await inquirer.prompt([{
+        type: 'input',
+        name: 'userInput',
+        message: 'Refine your query:',
+        default: userInput
+    }])).userInput
 }
 
 async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promise<string> {
-  const tokensForResponse = 200
-  const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`
-  const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion)
-  const context = buildContext(freeTokens)
-  const prompt = context + currentQuestion
+    const tokensForResponse = 200
+    const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`
+    console.log('currentQuestion', currentQuestion)
+    const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion)
+    console.log('freeTokens', freeTokens)
+    const context = buildContext(freeTokens)
+    console.log('context', context)
 
-  const completion = await openAi.createCompletion({
-    model: "text-davinci-003",
-    prompt,
-    temperature: 0,
-    max_tokens: tokensForResponse
-  });
+    const prompt = context + currentQuestion
+    const completion = await openAi.createCompletion({
+        model: "text-davinci-003",
+        prompt,
+        temperature: 0,
+        max_tokens: tokensForResponse
+    });
+    console.log('completion', completion.data.choices[0].text)
 
-  return completion.data.choices[0].text.trim();
+    return completion.data.choices[0].text.trim();
 }
 
 const removePrefix = (text: string): string => text.replace(/^(H|AI): /, '');
 
 function buildContext(freeTokens: number): string {
-  let context = '';
-  let usedTokens = 0;
-  const history = loadHistory()
-    .map(entry => entry.text)
+    let context = '';
+    let usedTokens = 0;
+    console.log('load history')
+    const history = loadHistory()
+        .map(entry => entry.text)
 
-  // remove current question
-  history.pop();
+    console.log('history', JSON.stringify(history))
 
-  while (usedTokens < freeTokens && history.length > 0) {
-    const entry = history.shift() + '\n\n'
-    const tokens = countTokens(entry)
-    if (usedTokens + tokens < freeTokens) {
-      context += entry
-      usedTokens += tokens
+    // remove current question
+    history.pop();
+
+    while (usedTokens < freeTokens && history.length > 0) {
+        const entry = history.shift() + '\n\n'
+        const tokens = countTokens(entry)
+        if (usedTokens + tokens < freeTokens) {
+            context += entry
+            usedTokens += tokens
+        }
     }
-  }
-  return context
+    return context
 }
 
 function getLastQuestionFromHistory(): string {
-  const history = loadHistory()
-    .filter(entry => entry.type === 'H')
+    const history = loadHistory()
+        .filter(entry => entry.type === 'H')
 
-  return history.pop().text;
+    return history.pop().text;
 }
 
 function loadHistory() {
-  return fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
-  .map(text => parseTextFromHistory(text))
-  .filter(entry => entry.text !== '')
+    return fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
+        .filter(line => line)
+        .map(text => parseTextFromHistory(text))
+        .filter(entry => entry.text !== '')
 }
 
 
@@ -178,11 +194,11 @@ const countTokens = (question: string) => encode(question).length
 
 let configStore = new ConfigStore();
 configStore.load().then(() => {
-  const oaiConfig = new oai.Configuration({
-    apiKey: configStore.useNextKey()
-  })
+    const oaiConfig = new oai.Configuration({
+        apiKey: configStore.useNextKey()
+    })
 
-  const openAi = new oai.OpenAIApi(oaiConfig)
+    const openAi = new oai.OpenAIApi(oaiConfig)
 
-  run(openAi)
+    run(openAi)
 })
