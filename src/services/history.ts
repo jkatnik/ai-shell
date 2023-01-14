@@ -1,7 +1,7 @@
 import {atob, btoa} from "buffer";
 import fs from "fs";
-import {getHistoryPath} from "./fileUtil";
-import {countTokens} from "./tokenUtil";
+import {getHistoryPath} from "./fileManagement";
+import {countTokens} from "./openAi";
 
 export const prepareTextForSave = (text: string) => btoa(text.trim())
 export const parseTextFromHistory = (historyEntry: string) => {

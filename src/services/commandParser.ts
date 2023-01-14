@@ -44,7 +44,6 @@ export const execCommand = () => {
 
 export const execInput = (config: CommandConfig, command: String) => {
     let onlyQuestion = command.slice().trim()
-    console.log('confg', JSON.stringify(config))
     if (config.flag.length > 0) {
         onlyQuestion = onlyQuestion.replace(`-${config.flag}`, '').trim()
     }

@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
-import { getHome } from './util/fileUtil';
 import { prompt } from 'inquirer';
+import {getHomeDir} from "./fileManagement";
 
 
 export class ConfigStore {
@@ -9,7 +9,7 @@ export class ConfigStore {
     private config: Config;
 
     constructor() {
-        this.configFilePath = `${getHome()}/.config/ai-bash/config.yaml`;
+        this.configFilePath = `${getHomeDir()}/.config/ai-bash/config.yaml`;
     }
 
     async load() {

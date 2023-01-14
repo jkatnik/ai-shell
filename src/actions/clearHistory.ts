@@ -1,5 +1,5 @@
 import {askAi} from "./aiQuestion";
-import {clearHistory} from "../util/fileUtil";
+import {clearHistory} from "../services/fileManagement";
 
 export const onlyClearHistory = (): void => clearHistory();
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import {execCommand} from "./util/cmdUtil";
+import {execCommand} from "./services/commandParser";
 
 execCommand()

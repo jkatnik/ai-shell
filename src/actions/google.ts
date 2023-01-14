@@ -1,5 +1,5 @@
-import {saveResultForBashWrapper} from "../util/fileUtil";
-import {getLastQuestionFromHistory} from "../util/historyUtil";
+import {saveResultForBashWrapper} from "../services/fileManagement";
+import {getLastQuestionFromHistory} from "../services/history";
 
 const GOOGLE_SEARCH_URL = 'https://www.google.pl/search'
 

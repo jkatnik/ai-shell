@@ -1,17 +1,16 @@
 import {OpenAIApi} from "openai";
 import chalk from "chalk";
-import {saveResultForBashWrapper, saveUserInputInHistory} from "./fileUtil";
+import {saveResultForBashWrapper, saveUserInputInHistory} from "./fileManagement";
 import * as oai from "openai";
-import {ConfigStore} from "../configStore";
-import {countTokens} from "./tokenUtil";
-import {buildHistoryContextWithTokenLimit, saveAiOutputInHistory} from "./historyUtil";
-import {promptIfUserAcceptsCommand, refineUserInput} from "./promtUtil";
+import {ConfigStore} from "./configStore";
+import {buildHistoryContextWithTokenLimit, saveAiOutputInHistory} from "./history";
+import {promptIfUserAcceptsCommand, refineUserInput} from "./promts";
+import {encode} from 'gpt-3-encoder';
 
 let config = null;
-
-let configStore = new ConfigStore();
 const getOpenAiConfig = async () => {
     if (!config) {
+        const configStore = new ConfigStore();
         await configStore.load()
         const oaiConfig = new oai.Configuration({
             apiKey: configStore.useNextKey()
@@ -21,7 +20,6 @@ const getOpenAiConfig = async () => {
     }
     return config
 }
-
 
 const askOpenAiWithContext = async (userInput: string, openAi: OpenAIApi): Promise<string> =>  {
     const tokensForResponse = 200
@@ -72,3 +70,5 @@ export const askOpenAi = async (question: string) => {
     }
     return userInput;
 }
+
+export const countTokens = (question: string) => encode(question).length
