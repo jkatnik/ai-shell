@@ -1,11 +1,13 @@
 function ai() {
+  echo $$ > /tmp/ai.pid
   echo "aborted" > /tmp/ai-autocomplete.out
   history -s "ai $@"
   ai-autocomplete "$@"
 
   COMMAND="$(< /tmp/ai-autocomplete.out)"
+  PID="$(< /tmp/ai.pid)"
   if [ "$COMMAND" != "aborted" ]; then
-      $COMMAND
       history -s $COMMAND
+      (sleep 5 && echo -n "$COMMAND" >> /proc/$PID/fd/0) &
   fi
 }
