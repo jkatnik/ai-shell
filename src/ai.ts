@@ -3,30 +3,18 @@
 import chalk from 'chalk'
 import { ConfigStore } from './configStore'
 import * as oai from 'openai'
+import { OpenAIApi } from 'openai'
 import inquirer from 'inquirer'
 import * as fs from 'fs';
-import { getHistoryPath, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
+import { clearHistory, getHistoryPath, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
 import { encode } from 'gpt-3-encoder';
 
-let configStore = new ConfigStore()
-const oaiConfig = new oai.Configuration({
-  apiKey: configStore.useNextKey()
-})
-configStore.save()
-
-const openAi = new oai.OpenAIApi(oaiConfig)
-
-function clearHistory(): void {
-  fs.truncateSync(getHistoryPath());
-}
-
-async function run(): Promise<void> {
+async function run(openAi: OpenAIApi): Promise<void> {
   let userInput = getCmdLineInput()
 
   if (userInput.startsWith('-n')) {
     // new context - removing history
     clearHistory()
-    console.log(chalk.white('History cleared'));
 
     userInput = userInput.replace('-n', '').trim()
   }
@@ -56,7 +44,7 @@ async function run(): Promise<void> {
 
   try {
     while(!done) {
-      const command = await askOpenAiWithContext(userInput)
+      const command = await askOpenAiWithContext(userInput, openAi)
       saveAiOutputInHistory(command)
 
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
@@ -133,7 +121,7 @@ async function refineUserInput(userInput: string): Promise<string> {
   }])).userInput
 }
 
-async function askOpenAiWithContext(userInput: string): Promise<string> {
+async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promise<string> {
   const tokensForResponse = 200
   const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`
   const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion)
@@ -188,4 +176,13 @@ function loadHistory() {
 
 const countTokens = (question: string) => encode(question).length
 
-run()
+let configStore = new ConfigStore();
+configStore.load().then(() => {
+  const oaiConfig = new oai.Configuration({
+    apiKey: configStore.useNextKey()
+  })
+
+  const openAi = new oai.OpenAIApi(oaiConfig)
+
+  run(openAi)
+})
