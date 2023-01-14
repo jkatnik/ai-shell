@@ -45,3 +45,7 @@ $ ai -g
 - configStore should check if newly entered API key is valid
 - documentation
 - prepare a blog post
+- add animated GIF demo animation to this README file
+- configure license
+- make it MacOS compatible
+- provide OS and shell version in the prompt context
