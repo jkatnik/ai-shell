@@ -4,7 +4,7 @@ services:
   ubuntu:
     container_name: ai-ubuntu
     build:
-      context: docker/.
+      context: .
       dockerfile: Dockerfile
       args:
         - UBUNTU_USER=ubuntu
