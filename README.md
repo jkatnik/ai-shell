@@ -49,3 +49,5 @@ $ ai -g
 - configure license
 - make it MacOS compatible
 - provide OS and shell version in the prompt context
+- "query" mode
+- make it possible to modify proposed command before execution
