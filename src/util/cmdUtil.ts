@@ -1,11 +1,13 @@
-import {openQuestionInGoogle, openLastQuestionInGoogleFromHistory} from "./google/google";
+import {openQuestionInGoogle, openLastQuestionInGoogleFromHistory} from "../actions/google";
+import {onlyClearHistory, clearHistoryAndRunQuestion} from "../actions/clearHistory";
+import {askAi, askAiWithoutQuestion} from "../actions/aiQuestion";
 
 const config: CommandConfig[] = [
     {
         flag: 'n',
         description: 'At the start remove the history and init the new one',
-        action: () => {},
-        emptyMessageAction: () => {},
+        action: (question) => clearHistoryAndRunQuestion(question),
+        emptyMessageAction: () => onlyClearHistory(),
         type: 'INIT_HISTORY'
     },
     {
@@ -18,13 +20,13 @@ const config: CommandConfig[] = [
     {
         flag: '',
         description: 'Default config. Just ask the question',
-        action: () => {},
-        emptyMessageAction: () => {},
+        action: (question) => askAi(question),
+        emptyMessageAction: () => askAiWithoutQuestion(),
         type: 'NORMAL'
     }
 ]
 
-export const checkInput = () => {
+export const execCommand = () => {
     const command = getCmdLineInput();
     const correctConfigs = config
         .filter(item => command.startsWith(`-${item.flag}`) && item.flag !== '');
