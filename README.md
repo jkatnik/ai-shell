@@ -1,6 +1,6 @@
+# AI-Bash
 
-
-## Developement
+## Development
 Use Node 18.x
 ```
 nvm use v18
@@ -8,15 +8,27 @@ nvm use v18
 
 ## Installation
 ```
-npm install
-npx link
+./install.sh
 ```
 
 ## Usage
 
+Basic usage:
 ```
 $ ai list tall text files in home dir
 ```
+
+Reset conversation context and use new one
+```
+$ ai -n
+```
+
+If OpenAI fails, you can send the last question to google
+
+```
+$ ai -g
+```
+
 
 ## Materials
 
@@ -26,3 +38,10 @@ $ ai list tall text files in home dir
 ## Reference
 - [OpenAI JS client](https://github.com/openai/openai-node#readme)
 - [why to use `npx link` instead of `npm link`](https://hirok.io/posts/avoid-npm-link)
+
+## Backlog
+- refactor
+- unit tests
+- configStore should check if newly entered API key is valid
+- documentation
+- prepare a blog post
