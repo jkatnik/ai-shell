@@ -49,3 +49,22 @@ $ ai -g
 - configure license
 - make it MacOS compatible
 - provide OS and shell version in the prompt context
+
+
+## Ideas
+
+### Different way of passing command
+Maybe we can use standard stdin command forward
+
+Example:
+
+Open terminal 1
+```
+$ echo $$
+296
+```
+Open terminal 2
+```
+$ echo -n 'ls -la' >> /proc/296/fd/0
+```
+Then in the terminal 1 you will see command ls -la
