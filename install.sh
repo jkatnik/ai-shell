@@ -10,4 +10,5 @@ if [ -z "$(type -t ai)" ]; then
     cat './src/ai-function.txt' >> ~/.bash_aliases
     source ~/.bash_aliases
     echo "Reload bash aliases with: source ~/.bash_aliases"
+    echo "Install xdotool to unlock additional features - sudo apt install xdotool"
 fi

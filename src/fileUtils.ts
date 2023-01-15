@@ -17,9 +17,17 @@ export const parseTextFromHistory = (historyEntry: string) => {
   }
 }
 
-export const saveResultForBashWrapper = (result: string) => fs.writeFileSync('/tmp/ai-autocomplete.out', result);
+type CommandType = 'PROCESSING' | 'EXECUTE' | 'AUTOCOMPLETE' | 'ABORTED'
+export const saveResultForBashWrapper = (commandType: CommandType, command?: string) => {
+  fs.writeFileSync('/tmp/ai-autocomplete.out', commandType + '\n');
+  if (!!command) {
+    fs.appendFileSync('/tmp/ai-autocomplete.out', command + '\n');
+  }
+}
 
 export const clearHistory = (): void => {
   fs.truncateSync(getHistoryPath())
   console.log(chalk.white('History cleared'));
 }
+
+export const isXdotoolInstalled = (): boolean => fs.existsSync('/usr/bin/xdotool')

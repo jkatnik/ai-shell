@@ -6,7 +6,7 @@ import * as oai from 'openai'
 import { OpenAIApi } from 'openai'
 import inquirer from 'inquirer'
 import * as fs from 'fs';
-import { clearHistory, getHistoryPath, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
+import { clearHistory, getHistoryPath, isXdotoolInstalled, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
 import { encode } from 'gpt-3-encoder';
 
 enum CmdLineOption {
@@ -46,7 +46,7 @@ async function run(openAi: OpenAIApi): Promise<void> {
 
   if (userInput === '') {
     console.log(chalk.yellow('No input provided'));
-    saveResultForBashWrapper('aborted');
+    saveResultForBashWrapper('ABORTED');
     return
   }
 
@@ -56,9 +56,10 @@ async function run(openAi: OpenAIApi): Promise<void> {
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
 
       switch (await promptIfUserAcceptsCommand()) {
-        case 'Accept': saveResultForBashWrapper(command); break outer;
+        case 'Execute': saveResultForBashWrapper('EXECUTE', command); break outer;
+        case 'Type': saveResultForBashWrapper('AUTOCOMPLETE', command); break outer;
         case 'Refine': userInput = await refineUserInput(userInput); break
-        case 'Cancel': saveResultForBashWrapper('aborted'); break outer;
+        case 'Cancel': saveResultForBashWrapper('ABORTED'); break outer;
       }
     }
 }
@@ -80,14 +81,18 @@ function getCmdLineInput() {
   return args.join(' ').trim()
 }
 
-type UserAction = 'Accept' | 'Refine' | 'Cancel'
+type UserAction = 'Execute' | 'Type' | 'Refine' | 'Cancel'
+
 async function promptIfUserAcceptsCommand(): Promise<UserAction> {
   return inquirer.prompt([
       {
         type: 'list',
         name: 'theme',
         message: 'What to do?',
-        choices: [ 'Accept', 'Refine', 'Cancel' ],
+        choices: [ 'Execute', {
+          name: 'Type',
+          disabled: !isXdotoolInstalled()
+        }, 'Refine', 'Cancel' ],
       }
     ])
     .then((answer) => {
@@ -177,7 +182,7 @@ function searchLatestQueryInGoogle(userInput: string): string {
   const uri = `https://www.google.pl/search?${params}`
   const command = `open ${uri} > /dev/null 2>&1`
 
-  saveResultForBashWrapper(command);
+  saveResultForBashWrapper('EXECUTE', command);
   return userInput;
 }
 

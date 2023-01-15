@@ -51,3 +51,20 @@ $ ai -g
 - provide OS and shell version in the prompt context
 - "query" mode
 - make it possible to modify proposed command before execution
+- detect dangerous command and highlight them in red
+
+## Known problems
+
+1. `$ ai zmień nazwę brancha na test`
+   fails with:
+   ```
+   node:internal/util:493
+   return new DOMException(message, name);
+   
+   DOMException [InvalidCharacterError]: Invalid character
+    at btoa (node:buffer:1228:13)
+    at prepareTextForSave (/home/jkatnik/www/ai/dist/fileUtils.js:38:56)
+    at saveUserInputInHistory (/home/jkatnik/www/ai/dist/ai.js:97:53)
+    at run (/home/jkatnik/www/ai/dist/ai.js:76:5)
+    at /home/jkatnik/www/ai/dist/ai.js:217:5
+   ```

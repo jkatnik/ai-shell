@@ -1,11 +1,27 @@
 function ai() {
-  echo "aborted" > /tmp/ai-autocomplete.out
+  echo "PROCESSING" > /tmp/ai-autocomplete.out
   history -s "ai $@"
   ai-autocomplete "$@"
 
-  COMMAND="$(< /tmp/ai-autocomplete.out)"
-  if [ "$COMMAND" != "aborted" ]; then
+  # read two lines from /tmp/ai-autocomplete.out
+  readarray -t RESULT < /tmp/ai-autocomplete.out
+  COMMAND_TYPE="${RESULT[0]}"
+  COMMAND="${RESULT[1]}"
+
+  if [ "$COMMAND_TYPE" = "EXECUTING" ]; then
+      echo Ups, something went wrong.
+  fi
+
+  if [ "$COMMAND_TYPE" = "EXECUTE" ]; then
       eval "$COMMAND"
       history -s $COMMAND
+  fi
+
+  if [ "$COMMAND_TYPE" = "AUTOCOMPLETE" ]; then
+      # escape quotes in COMMAND
+      COMMAND=$(echo $COMMAND | sed 's/"/\\"/g')
+
+      TYPE_COMMAND="sleep 0.1 && xdotool type --delay 0 \"$COMMAND\" &"
+      eval "($TYPE_COMMAND)  > /dev/null 2>&1"
   fi
 }
