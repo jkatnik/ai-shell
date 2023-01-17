@@ -1,7 +1,7 @@
 #!/bin/bash
 
 npm install
-#npm link --no-save
+npm link --no-save
 npx link .
 
 # check if "ai" function exists, create it if it doesn't

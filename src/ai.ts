@@ -167,8 +167,9 @@ function getLastQuestionFromHistory(): string {
 
 function loadHistory() {
   return fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
-  .map(text => parseTextFromHistory(text))
-  .filter(entry => entry.text !== '')
+      .filter(text => text)
+      .map(text => parseTextFromHistory(text))
+      .filter(entry => entry.text !== '')
 }
 
 function searchLatestQueryInGoogle(userInput: string): string {
