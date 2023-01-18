@@ -5,9 +5,12 @@ import { ConfigStore } from './configStore'
 import * as oai from 'openai'
 import { OpenAIApi } from 'openai'
 import prompts from 'prompts'
-import * as fs from 'fs';
-import { clearHistory, getHistoryPath, isXdotoolInstalled, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
-import { encode } from 'gpt-3-encoder';
+import { clearHistory, saveResultForBashWrapper } from './fileUtils';
+import { CmdLineOption, UserAction } from './types';
+import { loadHistory, saveUserInputInHistory } from './history';
+import { askOpenAiForCommand, promptForUserActionAfterCommand } from './CommandAction';
+import { askOpenAiQuestion, promptForUserActionAfterQuestion } from './QuestionAction';
+import { printHelp } from './HelpAction';
 
 const ButtonsPrompt = require("./prompts/buttons");
 
@@ -26,9 +29,6 @@ const toPrompt = (type, args) => {
   });
 }
 
-enum CmdLineOption {
-  HELP, NEW_CONTEXT, SEARCH_IN_GOOGLE, COMMAND
-}
 function detectOption(userInput: string): CmdLineOption {
   if (userInput.startsWith('-h') || userInput.startsWith('--help')) {
     return CmdLineOption.HELP
@@ -42,23 +42,26 @@ function detectOption(userInput: string): CmdLineOption {
     return CmdLineOption.SEARCH_IN_GOOGLE
   }
 
+  if (userInput.startsWith('-q') || userInput.startsWith('--question')) {
+    return CmdLineOption.QUESTION
+  }
+
   return CmdLineOption.COMMAND
 }
 async function run(openAi: OpenAIApi): Promise<void> {
   let userInput = getCmdLineInput()
 
   const option = detectOption(userInput)
+
+  function startNewContext(): void {
+    clearHistory();
+    userInput = userInput.replace('-n', '').trim()
+  }
+
   switch (option) {
-    case CmdLineOption.HELP:
-      printHelp();
-      return;
-    case CmdLineOption.SEARCH_IN_GOOGLE:
-      searchLatestQueryInGoogle(userInput);
-      return;
-    case CmdLineOption.NEW_CONTEXT:
-      clearHistory();
-      userInput = userInput.replace('-n', '').trim() // continue as COMMAND
-      break;
+    case CmdLineOption.HELP: printHelp(); return;
+    case CmdLineOption.SEARCH_IN_GOOGLE: searchLatestQueryInGoogle(userInput); return;
+    case CmdLineOption.NEW_CONTEXT: startNewContext(); break; // continue as COMMAND or QUESTION
   }
 
   if (userInput === '') {
@@ -68,39 +71,35 @@ async function run(openAi: OpenAIApi): Promise<void> {
   }
 
   saveUserInputInHistory(userInput);
-    outer: while(true) {
-      const command = await askOpenAiWithContext(userInput, openAi)
-      console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
-      const result = await promptIfUserAcceptsCommand()
-      switch (result) {
-        case 'Execute':
-          saveResultForBashWrapper('EXECUTE', command);
-          break outer;
-        case 'Type':
-          saveResultForBashWrapper('AUTOCOMPLETE', command);
-          break outer;
-        case 'Refine':
-          userInput = await refineUserInput(userInput);
-          break
-        case 'Cancel':
-          saveResultForBashWrapper('ABORTED');
-          break outer;
-        default:
-          console.log(chalk.red('Unexpected result: ' + result));
-          saveResultForBashWrapper('ABORTED');
-          break outer;
-      }
+  outer: while(true) {
+    const command = await askOpenAiWithContext(userInput, openAi, option)
+
+    console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
+
+    const result = await promptIfUserAcceptsCommand(option)
+
+    switch (result) {
+      case 'Execute':
+        saveResultForBashWrapper('EXECUTE', command);
+        break outer;
+      case 'Type':
+        saveResultForBashWrapper('AUTOCOMPLETE', command);
+        break outer;
+      case 'Refine':
+        userInput = await refineUserInput(userInput);
+        break
+      case 'AskQuestion':
+        userInput = await refineUserInput(userInput, 'Me');
+        break
+      case 'Cancel':
+        saveResultForBashWrapper('ABORTED');
+        break outer;
+      default:
+        console.log(chalk.red('Unexpected result: ' + result));
+        saveResultForBashWrapper('ABORTED');
+        break outer;
     }
-}
-
-function saveUserInputInHistory(userInput: string): void {
-  const text = prepareTextForSave(userInput)
-  fs.appendFileSync(getHistoryPath(), `H: ${text}\n`);
-}
-
-function saveAiOutputInHistory(aiOutput: string): void {
-  const text = prepareTextForSave(aiOutput)
-  fs.appendFileSync(getHistoryPath(), `AI: ${text}\n`);
+  }
 }
 
 function getCmdLineInput() {
@@ -110,44 +109,18 @@ function getCmdLineInput() {
   return args.join(' ').trim()
 }
 
-type UserAction = 'Execute' | 'Type' | 'Refine' | 'Cancel'
-
-async function promptIfUserAcceptsCommand(): Promise<UserAction> {
-  return prompts.prompt([
-      {
-        type: 'buttons',
-        name: 'action',
-        message: 'What to do?',
-        choices: [
-          {
-            title: 'Execute',
-            value: 'Execute'
-          },
-          {
-            title: 'Type',
-            value: 'Type',
-            disabled: !isXdotoolInstalled()
-          },
-          {
-            title: 'Refine',
-            value: 'Refine'
-          },
-          {
-            title: 'Cancel',
-            value: 'Cancel'
-          }],
-      }
-    ])
-    .then((answer) => {
-      return answer.action
-    })
+async function promptIfUserAcceptsCommand(option: CmdLineOption): Promise<UserAction> {
+  switch (option) {
+    case CmdLineOption.COMMAND: return promptForUserActionAfterCommand()
+    case CmdLineOption.QUESTION: return promptForUserActionAfterQuestion()
+  }
 }
 
-async function refineUserInput(userInput: string): Promise<string> {
+async function refineUserInput(userInput: string, label?: string): Promise<string> {
   userInput = (await prompts.prompt([{
     type: 'text',
     name: 'userInput',
-    message: 'Refine your query:',
+    message: label || 'Refine your query:',
     default: userInput
   }])).userInput
 
@@ -156,49 +129,16 @@ async function refineUserInput(userInput: string): Promise<string> {
   return userInput
 }
 
-async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi): Promise<string> {
-  const tokensForResponse = 200
-  const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`
-  const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion)
-  const context = buildContext(freeTokens)
-  const prompt = context + currentQuestion
-
+async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi, option: CmdLineOption): Promise<string> {
   try {
-    const completion = await openAi.createCompletion({
-      model: "text-davinci-003",
-      prompt,
-      temperature: 0,
-      max_tokens: tokensForResponse
-    });
-
-    const command = completion.data.choices[0].text.trim();
-
-    saveAiOutputInHistory(command)
-
-    return command;
+    switch (option) {
+      case CmdLineOption.COMMAND: return askOpenAiForCommand(userInput, openAi);
+      case CmdLineOption.QUESTION: return askOpenAiQuestion(userInput, openAi);
+      default: throw new Error('Unexpected option: ' + option);
+    }
   } catch (error) {
     printError(error);
   }
-}
-
-function buildContext(freeTokens: number): string {
-  let context = '';
-  let usedTokens = 0;
-  const history = loadHistory()
-    .map(entry => entry.text)
-
-  // remove current question
-  history.pop();
-
-  while (usedTokens < freeTokens && history.length > 0) {
-    const entry = history.shift() + '\n\n'
-    const tokens = countTokens(entry)
-    if (usedTokens + tokens < freeTokens) {
-      context += entry
-      usedTokens += tokens
-    }
-  }
-  return context
 }
 
 function getLastQuestionFromHistory(): string {
@@ -208,12 +148,6 @@ function getLastQuestionFromHistory(): string {
   return history.pop().text;
 }
 
-function loadHistory() {
-  return fs.readFileSync(getHistoryPath(), 'utf8').split('\n')
-      .filter(text => text)
-      .map(text => parseTextFromHistory(text))
-      .filter(entry => entry.text !== '')
-}
 
 function searchLatestQueryInGoogle(userInput: string): string {
   userInput = userInput.replace('-g', '').trim()
@@ -230,13 +164,6 @@ function searchLatestQueryInGoogle(userInput: string): string {
   return userInput;
 }
 
-function printHelp(): void {
-  console.log(`Options:
--n - new context, clears history
--g - queries google with last command from history
--h - prints this help`)
-}
-
 function printError(error): void {
   if (error.response) {
     console.log(error.response.status);
@@ -245,8 +172,6 @@ function printError(error): void {
     console.log(error.message);
   }
 }
-
-const countTokens = (question: string) => encode(question).length
 
 let configStore = new ConfigStore();
 configStore.load().then(() => {
