@@ -50,6 +50,7 @@ $ ai -g
 - make it MacOS compatible
 - provide OS and shell version in the prompt context
 - "query" mode
+- -i information (version, file locations, node version, authors, etc) 
 - make it possible to modify proposed command before execution
 - detect dangerous command and highlight them in red
 

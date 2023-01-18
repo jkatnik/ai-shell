@@ -4,10 +4,27 @@ import chalk from 'chalk'
 import { ConfigStore } from './configStore'
 import * as oai from 'openai'
 import { OpenAIApi } from 'openai'
-import inquirer from 'inquirer'
+import prompts from 'prompts'
 import * as fs from 'fs';
 import { clearHistory, getHistoryPath, isXdotoolInstalled, parseTextFromHistory, prepareTextForSave, saveResultForBashWrapper } from './fileUtils';
 import { encode } from 'gpt-3-encoder';
+
+const ButtonsPrompt = require("./prompts/buttons");
+
+const noop = v => v;
+
+const toPrompt = (type, args) => {
+  return new Promise((res, rej) => {
+    const p = new ButtonsPrompt(args);
+    const onAbort = noop;
+    const onSubmit = noop;
+    const onExit = noop;
+    p.on('state', args.onState || noop);
+    p.on('submit', x => res(onSubmit(x)));
+    p.on('exit', x => res(onExit(x)));
+    p.on('abort', x => rej(onAbort(x)));
+  });
+}
 
 enum CmdLineOption {
   HELP, NEW_CONTEXT, SEARCH_IN_GOOGLE, COMMAND
@@ -54,12 +71,24 @@ async function run(openAi: OpenAIApi): Promise<void> {
     outer: while(true) {
       const command = await askOpenAiWithContext(userInput, openAi)
       console.log(chalk.grey('AI: ') + chalk.greenBright.bold(command))
-
-      switch (await promptIfUserAcceptsCommand()) {
-        case 'Execute': saveResultForBashWrapper('EXECUTE', command); break outer;
-        case 'Type': saveResultForBashWrapper('AUTOCOMPLETE', command); break outer;
-        case 'Refine': userInput = await refineUserInput(userInput); break
-        case 'Cancel': saveResultForBashWrapper('ABORTED'); break outer;
+      const result = await promptIfUserAcceptsCommand()
+      switch (result) {
+        case 'Execute':
+          saveResultForBashWrapper('EXECUTE', command);
+          break outer;
+        case 'Type':
+          saveResultForBashWrapper('AUTOCOMPLETE', command);
+          break outer;
+        case 'Refine':
+          userInput = await refineUserInput(userInput);
+          break
+        case 'Cancel':
+          saveResultForBashWrapper('ABORTED');
+          break outer;
+        default:
+          console.log(chalk.red('Unexpected result: ' + result));
+          saveResultForBashWrapper('ABORTED');
+          break outer;
       }
     }
 }
@@ -84,25 +113,39 @@ function getCmdLineInput() {
 type UserAction = 'Execute' | 'Type' | 'Refine' | 'Cancel'
 
 async function promptIfUserAcceptsCommand(): Promise<UserAction> {
-  return inquirer.prompt([
+  return prompts.prompt([
       {
-        type: 'list',
-        name: 'theme',
+        type: 'buttons',
+        name: 'action',
         message: 'What to do?',
-        choices: [ 'Execute', {
-          name: 'Type',
-          disabled: !isXdotoolInstalled()
-        }, 'Refine', 'Cancel' ],
+        choices: [
+          {
+            title: 'Execute',
+            value: 'Execute'
+          },
+          {
+            title: 'Type',
+            value: 'Type',
+            disabled: !isXdotoolInstalled()
+          },
+          {
+            title: 'Refine',
+            value: 'Refine'
+          },
+          {
+            title: 'Cancel',
+            value: 'Cancel'
+          }],
       }
     ])
     .then((answer) => {
-      return answer.theme
-    });
+      return answer.action
+    })
 }
 
 async function refineUserInput(userInput: string): Promise<string> {
-  userInput = (await inquirer.prompt([{
-    type: 'input',
+  userInput = (await prompts.prompt([{
+    type: 'text',
     name: 'userInput',
     message: 'Refine your query:',
     default: userInput
@@ -207,11 +250,13 @@ const countTokens = (question: string) => encode(question).length
 
 let configStore = new ConfigStore();
 configStore.load().then(() => {
+  (prompts.prompts as any).buttons = args => toPrompt('ButtonsPrompt', args);
+
   const oaiConfig = new oai.Configuration({
     apiKey: configStore.useNextKey()
-  })
+  });
 
-  const openAi = new oai.OpenAIApi(oaiConfig)
+  const openAi = new oai.OpenAIApi(oaiConfig);
 
-  run(openAi)
+  run(openAi);
 })

@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import { getHome } from './fileUtils';
-import { prompt } from 'inquirer';
+import prompts from 'prompts';
 
 
 export class ConfigStore {
@@ -14,7 +14,7 @@ export class ConfigStore {
 
     async load() {
         if (!fs.existsSync(this.configFilePath)) {
-            await prompt([{
+            await prompts.prompt([{
                 type: 'input',
                 name: 'apiKey',
                 message: `You need to configure your OpenAI API Key.
