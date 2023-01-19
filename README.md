@@ -1,21 +1,46 @@
 # AI-Bash
 
+This project solves following problem:
+> I love command line!
+> Command line doesn't love me back. 
+> It is a difficult relationship.
+
+
 ## Development
-Use Node 18.x
+Use Node 16 or highier
 ```
-nvm use v18
+nvm use v16
 ```
 
 ## Installation
-```
-./install.sh
-```
-
+1. Create account at https://beta.openai.com/signup
+2. [Create new secret key](https://beta.openai.com/account/api-keys) and note it down 
+3. Install `xdotool`
+    For Ubuntu based distributions:
+     ```
+    apt install xdotool
+    ```
+    For MacOS:
+    ```
+    brew install xdotool
+    ```
+4. execute installation script
+    ```
+    ./install.sh
+    ```
+5. Reload shell functions with
+    ```
+    source ~/.bash_aliases
+    ```
+6. have fun
+    ```
+    ai list files in my home folder 
+    ```
 ## Usage
 
 Basic usage:
 ```
-$ ai list tall text files in home dir
+$ ai list all text files in home dir
 ```
 
 Reset conversation context and use new one
@@ -23,8 +48,12 @@ Reset conversation context and use new one
 $ ai -n
 ```
 
-If OpenAI fails, you can send the last question to google
+Ask OpenAI a question
+```bash
+ai -q Who was the best soccer player ever?
+```
 
+If OpenAI fails, you can send the last question to google
 ```
 $ ai -g
 ```
