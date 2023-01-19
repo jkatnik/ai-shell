@@ -70,6 +70,7 @@ $ ai -g
 
 ## Backlog
 - refactor
+- store all files (config, logs?, history) in a single location
 - unit tests
 - configStore should check if newly entered API key is valid
 - documentation
