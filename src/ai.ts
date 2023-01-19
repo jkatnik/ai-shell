@@ -29,39 +29,23 @@ const toPrompt = (type, args) => {
   });
 }
 
-function detectOption(userInput: string): CmdLineOption {
-  if (userInput.startsWith('-h') || userInput.startsWith('--help')) {
-    return CmdLineOption.HELP
-  }
-
-  if (userInput.startsWith('-n') || userInput.startsWith('--new-context')) {
-    return CmdLineOption.NEW_CONTEXT
-  }
-
-  if (userInput.startsWith('-g') || userInput.startsWith('--google')) {
-    return CmdLineOption.SEARCH_IN_GOOGLE
-  }
-
-  if (userInput.startsWith('-q') || userInput.startsWith('--question')) {
-    return CmdLineOption.QUESTION
-  }
-
-  return CmdLineOption.COMMAND
-}
 async function run(openAi: OpenAIApi): Promise<void> {
-  let userInput = getCmdLineInput()
-
-  const option = detectOption(userInput)
-
   function startNewContext(): void {
     clearHistory();
     userInput = userInput.replace('-n', '').trim()
   }
 
+  let userInput = getCmdLineInput()
+
+  let option = detectOption(userInput)
+
   switch (option) {
     case CmdLineOption.HELP: printHelp(); return;
     case CmdLineOption.SEARCH_IN_GOOGLE: searchLatestQueryInGoogle(userInput); return;
-    case CmdLineOption.NEW_CONTEXT: startNewContext(); break; // continue as COMMAND or QUESTION
+    case CmdLineOption.NEW_CONTEXT:
+      startNewContext();
+      option = CmdLineOption.COMMAND;
+      break; // continue as COMMAND or QUESTION
   }
 
   if (userInput === '') {
@@ -101,7 +85,6 @@ async function run(openAi: OpenAIApi): Promise<void> {
     }
   }
 }
-
 function getCmdLineInput() {
   let args = process.argv
   args.shift() // first is path to nodejs
@@ -148,7 +131,6 @@ function getLastQuestionFromHistory(): string {
   return history.pop().text;
 }
 
-
 function searchLatestQueryInGoogle(userInput: string): string {
   userInput = userInput.replace('-g', '').trim()
 
@@ -171,6 +153,26 @@ function printError(error): void {
   } else {
     console.log(error.message);
   }
+}
+
+function detectOption(userInput: string): CmdLineOption {
+  if (userInput.startsWith('-h') || userInput.startsWith('--help')) {
+    return CmdLineOption.HELP
+  }
+
+  if (userInput.startsWith('-n') || userInput.startsWith('--new-context')) {
+    return CmdLineOption.NEW_CONTEXT
+  }
+
+  if (userInput.startsWith('-g') || userInput.startsWith('--google')) {
+    return CmdLineOption.SEARCH_IN_GOOGLE
+  }
+
+  if (userInput.startsWith('-q') || userInput.startsWith('--question')) {
+    return CmdLineOption.QUESTION
+  }
+
+  return CmdLineOption.COMMAND
 }
 
 let configStore = new ConfigStore();
