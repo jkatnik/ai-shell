@@ -5,29 +5,14 @@ import { ConfigStore } from './configStore'
 import * as oai from 'openai'
 import { OpenAIApi } from 'openai'
 import prompts from 'prompts'
+import * as promptBtn from './prompts/buttons';
 import { clearHistory, saveResultForBashWrapper } from './fileUtils';
 import { CmdLineOption, UserAction } from './types';
-import { loadHistory, saveUserInputInHistory } from './history';
-import { askOpenAiForCommand, promptForUserActionAfterCommand } from './CommandAction';
-import { askOpenAiQuestion, promptForUserActionAfterQuestion } from './QuestionAction';
-import { printHelp } from './HelpAction';
-
-const ButtonsPrompt = require("./prompts/buttons");
-
-const noop = v => v;
-
-const toPrompt = (type, args) => {
-  return new Promise((res, rej) => {
-    const p = new ButtonsPrompt(args);
-    const onAbort = noop;
-    const onSubmit = noop;
-    const onExit = noop;
-    p.on('state', args.onState || noop);
-    p.on('submit', x => res(onSubmit(x)));
-    p.on('exit', x => res(onExit(x)));
-    p.on('abort', x => rej(onAbort(x)));
-  });
-}
+import { saveUserInputInHistory } from './history';
+import { askOpenAiForCommand, promptForUserActionAfterCommand } from './actions/CommandAction';
+import { askOpenAiQuestion, promptForUserActionAfterQuestion } from './actions/QuestionAction';
+import { printHelp } from './actions/HelpAction';
+import { searchLatestQueryInGoogle } from './actions/SearchInGoogle';
 
 async function run(openAi: OpenAIApi): Promise<void> {
   function startNewContext(): void {
@@ -124,28 +109,6 @@ async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi, option
   }
 }
 
-function getLastQuestionFromHistory(): string {
-  const history = loadHistory()
-    .filter(entry => entry.type === 'H')
-
-  return history.pop().text;
-}
-
-function searchLatestQueryInGoogle(userInput: string): string {
-  userInput = userInput.replace('-g', '').trim()
-
-  if (!userInput) {
-    userInput = getLastQuestionFromHistory()
-  }
-
-  const params = new URLSearchParams({q: userInput}).toString()
-  const uri = `https://www.google.pl/search?${params}`
-  const command = `open ${uri} > /dev/null 2>&1`
-
-  saveResultForBashWrapper('EXECUTE', command);
-  return userInput;
-}
-
 function printError(error): void {
   if (error.response) {
     console.log(error.response.status);
@@ -177,7 +140,7 @@ function detectOption(userInput: string): CmdLineOption {
 
 let configStore = new ConfigStore();
 configStore.load().then(() => {
-  (prompts.prompts as any).buttons = args => toPrompt('ButtonsPrompt', args);
+  (prompts.prompts as any).buttons = args => promptBtn.toPrompt('ButtonsPrompt', args);
 
   const oaiConfig = new oai.Configuration({
     apiKey: configStore.useNextKey()

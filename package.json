@@ -4,11 +4,10 @@
   "description": "",
   "main": "dist/ai.js",
   "scripts": {
-    "install": "tsc && npm run copyfiles",
+    "install": "tsc && npx link .",
     "start": "tsc && node dist/ai.js",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "copyfiles": "copyfiles -u 1 src/**/*.js dist"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
     "ai-autocomplete": "./dist/ai.js"
@@ -21,7 +20,6 @@
     "@types/chalk": "^2.2.0",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^18.11.18",
-    "copyfiles": "^2.4.1",
     "eslint": "^8.30.0",
     "typescript": "^4.9.4"
   },

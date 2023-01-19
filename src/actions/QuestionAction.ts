@@ -1,7 +1,7 @@
 import { OpenAIApi } from 'openai';
-import { saveAiOutputInHistory } from './history';
-import { buildContext, countTokens } from './OpenAiUtils';
-import { UserAction } from './types';
+import { saveAiOutputInHistory } from '../history';
+import { buildContext, countTokens } from '../OpenAiUtils';
+import { UserAction } from '../types';
 import prompts from 'prompts';
 
 export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): Promise<string> => {

@@ -1,9 +1,9 @@
 import { OpenAIApi } from 'openai';
-import { saveAiOutputInHistory } from './history';
-import { buildContext, countTokens } from './OpenAiUtils';
-import { UserAction } from './types';
+import { saveAiOutputInHistory } from '../history';
+import { buildContext, countTokens } from '../OpenAiUtils';
+import { UserAction } from '../types';
 import prompts from 'prompts';
-import { isXdotoolInstalled } from './fileUtils';
+import { isXdotoolInstalled } from '../fileUtils';
 
 export const askOpenAiForCommand = async (userInput: string, openAi: OpenAIApi): Promise<string> => {
   const tokensForResponse = 200

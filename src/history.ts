@@ -15,3 +15,10 @@ export const loadHistory = () => fs.readFileSync(getHistoryPath(), 'utf8').split
   .filter(text => text)
   .map(text => parseTextFromHistory(text))
   .filter(entry => entry.text !== '');
+
+export const getLastQuestionFromHistory = (): string => {
+  const history = loadHistory()
+    .filter(entry => entry.type === 'H')
+
+  return history.pop().text;
+};

@@ -1,12 +1,13 @@
 'use strict';
 
-const color = require('kleur');
-const { cursor } = require('sisteransi');
+import * as color from 'kleur';
+import { cursor } from 'sisteransi';
+import { clear, entriesToDisplay, style } from 'prompts/lib/util';
+
 const Prompt = require('prompts/lib/elements/prompt');
 const SelectPrompt = require('prompts/lib/elements/select')
-const {style, clear, entriesToDisplay} = require('prompts/lib/util');
 
-class ButtonsPrompt extends SelectPrompt {
+export class ButtonsPrompt extends SelectPrompt {
   constructor(opts={}) {
     super(opts);
   }
@@ -80,4 +81,17 @@ class ButtonsPrompt extends SelectPrompt {
   }
 }
 
-module.exports = ButtonsPrompt;
+const noop = v => v;
+
+export const toPrompt = (type, args) => {
+  return new Promise((res, rej) => {
+    const p = new ButtonsPrompt(args);
+    const onAbort = noop;
+    const onSubmit = noop;
+    const onExit = noop;
+    p.on('state', args.onState || noop);
+    p.on('submit', x => res(onSubmit(x)));
+    p.on('exit', x => res(onExit(x)));
+    p.on('abort', x => rej(onAbort(x)));
+  });
+}
