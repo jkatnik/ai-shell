@@ -2,3 +2,5 @@ node_modules
 dist
 .idea
 /ai-autocomplete.out
+/ai-history.txt
+/config.yaml
