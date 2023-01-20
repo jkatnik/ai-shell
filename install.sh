@@ -1,14 +1,8 @@
-#!/bin/bash
 
-npm install
-npm link --no-save
-npx link .
+if [ $SHELL = "/bin/zsh" ]; then
+    ./shell-scripts/zsh-installer.sh
+fi
 
-# check if "ai" function exists, create it if it doesn't
-if [ -z "$(type -t ai)" ]; then
-    # create foo function and save it to ~/.bash_aliases
-    cat './src/ai-function.txt' >> ~/.bash_aliases
-    source ~/.bash_aliases
-    echo "Reload bash aliases with: source ~/.bash_aliases"
-    echo "Install xdotool to unlock additional features - sudo apt install xdotool"
+if [ $SHELL = "/bin/bash" ]; then
+    ./shell-scripts/bash-installer.sh
 fi

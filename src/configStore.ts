@@ -9,13 +9,14 @@ export class ConfigStore {
     private config: Config;
 
     constructor() {
-        this.configFilePath = `${getHome()}/.config/ai-bash/config.yaml`;
+        console.log("Home: ", getHome());
+        this.configFilePath = `${getHome()}/config.yaml`;
     }
 
     async load() {
         if (!fs.existsSync(this.configFilePath)) {
             await prompts.prompt([{
-                type: 'input',
+                type: 'text',
                 name: 'apiKey',
                 message: `You need to configure your OpenAI API Key.
 You can get it from https://beta.openai.com/account/api-keys

@@ -1,10 +1,10 @@
-import path from 'path';
 import { atob, btoa } from 'buffer';
 import * as fs from 'fs';
 import chalk from 'chalk';
 
-export const getHome = () => path.resolve(process.env['HOME'] || process.env['USERPROFILE']);
-export const getHistoryPath = () => getHome() + '/.ai-history.txt';
+
+export const getHome = () => process.env.AI_SHELL_HOME;
+export const getHistoryPath = () => getHome() + '/ai-history.txt';
 
 export const prepareTextForSave = (text: string) => btoa(text.trim())
 export const parseTextFromHistory = (historyEntry: string) => {
@@ -19,9 +19,10 @@ export const parseTextFromHistory = (historyEntry: string) => {
 
 type CommandType = 'PROCESSING' | 'EXECUTE' | 'AUTOCOMPLETE' | 'ABORTED'
 export const saveResultForBashWrapper = (commandType: CommandType, command?: string) => {
-  fs.writeFileSync('/tmp/ai-autocomplete.out', commandType + '\n');
+  const outFile = getHome() + '/ai-autocomplete.out'
+  fs.writeFileSync(outFile, commandType + '\n');
   if (!!command) {
-    fs.appendFileSync('/tmp/ai-autocomplete.out', command + '\n');
+    fs.appendFileSync(outFile, command + '\n');
   }
 }
 
