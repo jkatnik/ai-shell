@@ -28,13 +28,6 @@ else
   ok 'node version is >= 16'
 fi
 
-if ! [ -x "$(command -v xdotool)" ]; then
-  warn 'xdotool is not installed.'
-  echo -e "install xdotool with \e[33mbrew install xdotool\e[0m"
-else
-  ok 'xdotool is present'
-fi
-
 touch ~/.zshrc
 
 if ! grep -q "ai-shell integration" ~/.zshrc; then
