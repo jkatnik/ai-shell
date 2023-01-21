@@ -9,7 +9,6 @@ export class ConfigStore {
     private config: Config;
 
     constructor() {
-        console.log("Home: ", getHome());
         this.configFilePath = `${getHome()}/config.yaml`;
     }
 
