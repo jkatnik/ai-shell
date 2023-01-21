@@ -32,23 +32,28 @@ export const promptForUserActionAfterCommand = async (): Promise<UserAction> => 
     type: 'buttons',
     name: 'action',
     message: 'What to do?',
+
     choices: [
       {
         title: 'Execute',
-        value: 'Execute'
+        value: 'Execute',
+        description: 'Exit and execute proposed command.'
       },
       {
         title: 'Type',
         value: 'Type',
-        disabled: !isXdotoolInstalled()
+        disabled: !isXdotoolInstalled(),
+        description: 'Exit and type in proposed command but without executing it.'
       },
       {
         title: 'Refine',
-        value: 'Refine'
+        value: 'Refine',
+        description: 'Type in new query to OpenAI.'
       },
       {
-        title: 'Cancel',
-        value: 'Cancel'
+        title: 'Abort',
+        value: 'Cancel',
+        description: 'Just exit.'
       }],
   }
 ])
