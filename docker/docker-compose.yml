@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  ubuntu:
+    container_name: ai-ubuntu
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - UBUNTU_USER=ubuntu
+        - UBUNTU_PASSWORD=pass
+    volumes:
+      - ./:/home/ubuntu/ai/
+    restart: always
+    ports:
+      - "822:22"

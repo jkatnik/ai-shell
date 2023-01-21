@@ -75,3 +75,21 @@ $ ai -g
 - provide OS and shell version in the prompt context
 - -i information (version, file locations, node version, authors, etc)
 - detect dangerous command and highlight them in red
+
+## Ideas to consider
+
+### Different way of passing command
+Maybe we can use standard stdin command forward
+
+Example:
+
+Open terminal 1
+```
+$ echo $$
+296
+```
+Open terminal 2
+```
+$ echo -n 'ls -la' >> /proc/296/fd/0
+```
+Then in the terminal 1 you will see command ls -la
