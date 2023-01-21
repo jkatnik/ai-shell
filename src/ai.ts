@@ -43,7 +43,7 @@ async function run(openAi: OpenAIApi): Promise<void> {
   outer: while(true) {
     const command = await askOpenAiWithContext(userInput, openAi, option)
 
-    console.log(chalk.grey('\nAI: ') + chalk.cyanBright.bold(command) + '\n')
+    console.log(chalk.grey('\nAI: ') + chalk.bold(command) + '\n')
 
     const result = await promptIfUserAcceptsCommand(option)
 

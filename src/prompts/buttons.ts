@@ -59,7 +59,7 @@ export class ButtonsPrompt extends SelectPrompt {
     // Print choices
     if (!this.done) {
       this.outputText += '\n';
-      let description = false;
+      let description = '';
       for (let i = startIndex; i < endIndex; i++) {
         let title, desc = '', v = this.choices[i];
 
@@ -74,8 +74,8 @@ export class ButtonsPrompt extends SelectPrompt {
 
         this.outputText += ` ${title}${color.gray(desc)} `;
       }
-      if (description) {
-        this.outputText += `\n ${description}`;
+      if (!!description) {
+        this.outputText += `\n ${color.grey(description)}`;
       }
     }
 
