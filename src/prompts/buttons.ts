@@ -8,8 +8,10 @@ const Prompt = require('prompts/lib/elements/prompt');
 const SelectPrompt = require('prompts/lib/elements/select')
 
 export class ButtonsPrompt extends SelectPrompt {
-  constructor(opts={}) {
+  constructor(opts: { hint?: string } ={
+  }) {
     super(opts);
+    this.hint = opts.hint || '- Use arrow-keys. Enter to submit.';
   }
 
   up() { }
@@ -61,9 +63,9 @@ export class ButtonsPrompt extends SelectPrompt {
       for (let i = startIndex; i < endIndex; i++) {
         let title, desc = '', v = this.choices[i];
 
-        const buttonLabel = ` ${v.title} `
-        const focusedBtn = v.disabled ? color.bgWhite().grey                  : color.bgWhite().red
-        const blurredBtn = v.disabled ? color.bgWhite().black().strikethrough : color.bgBlue().white
+        const buttonLabel = this.cursor === i ? `⟫ ${v.title} ⟪` : `  ${v.title} `;
+        const focusedBtn = v.disabled ? color.grey().strikethrough : color.cyan
+        const blurredBtn = v.disabled ? color.grey().strikethrough : color.reset
 
         title = this.cursor === i ? focusedBtn(buttonLabel) : blurredBtn(buttonLabel);
         if (v.description && this.cursor === i) {
