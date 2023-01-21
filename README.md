@@ -13,24 +13,20 @@ nvm use v16
 ```
 
 ## Installation
-1. Create account at https://beta.openai.com/signup
-2. [Create new secret key](https://beta.openai.com/account/api-keys) and note it down 
-3. Install `xdotool`
-    For Ubuntu based distributions:
-     ```
+1. Clone this project `git clone git@github.com:jkatnik/ai-bash.git`
+2. Register at https://beta.openai.com/signup
+   and [create secret key](https://beta.openai.com/account/api-keys). Note it down. 
+3. On Ubuntu based distributions for extra features, install `xdotool`
+    ```
     apt install xdotool
     ```
-    For MacOS:
-    ```
-    brew install xdotool
-    ```
-4. execute installation script
+4. run installation script
     ```
     ./install.sh
     ```
-5. Reload shell functions with
+5. Reload shell
     ```
-    source ~/.bash_aliases
+    source ~/.bashrc
     ```
 6. have fun
     ```
@@ -70,15 +66,12 @@ $ ai -g
 
 ## Backlog
 - refactor
-- store all files (config, logs?, history) in a single location
 - unit tests
 - configStore should check if newly entered API key is valid
 - documentation
 - prepare a blog post
 - add animated GIF demo animation to this README file
 - configure license
-- make it MacOS compatible
 - provide OS and shell version in the prompt context
-- -i information (version, file locations, node version, authors, etc) 
-- make it possible to modify proposed command before execution
+- -i information (version, file locations, node version, authors, etc)
 - detect dangerous command and highlight them in red

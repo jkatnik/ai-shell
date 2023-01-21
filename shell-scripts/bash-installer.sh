@@ -50,5 +50,5 @@ fi
 npm install
 npm link --no-save
 
+echo "================================================================="
 echo -e "\e[31mYou need to refresh bash environment with:\e[0m source ~/.bashrc"
-echo "============ DONE ==============="

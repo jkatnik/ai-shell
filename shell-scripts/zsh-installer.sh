@@ -15,6 +15,7 @@ warn() {
 
 if ! [ -x "$(command -v node)" ]; then
   error 'node is not installed.'
+  echo -e "install node with \e[33mbrew install node\e[0m"
   exit 1
 else
   ok 'node is present'
@@ -43,5 +44,5 @@ fi
 npm install
 npm link --no-save
 
+echo "================================================================="
 echo -e "\e[31mYou need to refresh zsh environment with:\e[0m source ~/.zshrc"
-echo "============ DONE ==============="
