@@ -6,7 +6,6 @@ function ai() {
 
   ai-autocomplete "$@"
 
-  readarray -t RESULT < "$AI_SHELL_HOME/ai-autocomplete.out"
   typeset -a RESULT=("${(@f)"$(<"$EXCHANGE_FILE")"}")
 
   COMMAND_TYPE="${RESULT[1]}"
