@@ -1,152 +1,127 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk'
-import { ConfigStore } from './configStore'
-import * as oai from 'openai'
-import { OpenAIApi } from 'openai'
-import prompts from 'prompts'
+import chalk from 'chalk';
+import * as oai from 'openai';
+import { OpenAIApi } from 'openai';
+import prompts from 'prompts';
+import ConfigStore from './configStore';
 import * as promptBtn from './prompts/buttons';
 import { clearHistory, saveResultForBashWrapper } from './fileUtils';
 import { CmdLineOption, UserAction } from './types';
 import { saveUserInputInHistory } from './history';
-import { askOpenAiForCommand, promptForUserActionAfterCommand } from './actions/CommandAction';
-import { askOpenAiQuestion, promptForUserActionAfterQuestion } from './actions/QuestionAction';
-import { printHelp } from './actions/HelpAction';
-import { searchLatestQueryInGoogle } from './actions/SearchInGoogle';
+import { promptForUserActionAfterCommand } from './actions/CommandAction';
+import { promptForUserActionAfterQuestion } from './actions/QuestionAction';
+import printHelp from './actions/HelpAction';
+import searchLatestQueryInGoogle from './actions/SearchInGoogle';
+import { detectOption, getCmdLineInput } from './cmdLineUtils';
+import { askOpenAiWithContext } from './OpenAiUtils';
 
-async function run(openAi: OpenAIApi): Promise<void> {
-  function startNewContext(): void {
-    clearHistory();
-    userInput = userInput.replace('-n', '').trim()
-  }
-
-  let userInput = getCmdLineInput()
-
-  let option = detectOption(userInput)
-
+async function promptUserForNextAction(option: CmdLineOption): Promise<UserAction> {
   switch (option) {
-    case CmdLineOption.HELP: printHelp(); return;
-    case CmdLineOption.SEARCH_IN_GOOGLE: searchLatestQueryInGoogle(userInput); return;
-    case CmdLineOption.NEW_CONTEXT:
-      startNewContext();
-      option = CmdLineOption.COMMAND;
-      break; // continue as COMMAND or QUESTION
+    case CmdLineOption.COMMAND:
+      return promptForUserActionAfterCommand();
+    case CmdLineOption.QUESTION:
+      return promptForUserActionAfterQuestion();
+    default:
+      throw new Error(`Unexpected option: ${option}`);
   }
+}
 
-  if (userInput === '') {
-    console.log(chalk.yellow('No input provided'));
-    saveResultForBashWrapper('ABORTED');
-    return
-  }
+const refineUserInput = async (userInput: string, label?: string): Promise<string> => (await prompts.prompt([{
+  type: 'text',
+  name: 'userInput',
+  message: label || 'Refine your query:',
+  default: userInput,
+}])).userInput;
 
-  saveUserInputInHistory(userInput);
-  outer: while(true) {
-    const command = await askOpenAiWithContext(userInput, openAi, option)
+const handleAiOptions = async (
+  openAi: OpenAIApi,
+  option: CmdLineOption.COMMAND | CmdLineOption.QUESTION,
+  userInput: string,
+): Promise<void> => {
+  let newUserInput = userInput;
+  let continueProcessing = true;
 
-    console.log(chalk.grey('\nAI: ') + chalk.bold(command) + '\n')
+  while (continueProcessing) {
+    /* eslint-disable no-await-in-loop */
+    saveUserInputInHistory(newUserInput);
+    const command = await askOpenAiWithContext(newUserInput, openAi, option);
 
-    const result = await promptIfUserAcceptsCommand(option)
+    console.log(`${chalk.grey('\nAI: ') + chalk.bold(command)}\n`);
+
+    const result = await promptUserForNextAction(option);
 
     switch (result) {
       case 'Execute':
         saveResultForBashWrapper('EXECUTE', command);
-        break outer;
+        continueProcessing = false;
+        break;
       case 'Type':
         saveResultForBashWrapper('AUTOCOMPLETE', command);
-        break outer;
+        continueProcessing = false;
+        break;
       case 'Refine':
-        userInput = await refineUserInput(userInput);
-        break
+        newUserInput = await refineUserInput(newUserInput);
+        break;
       case 'AskQuestion':
-        userInput = await refineUserInput(userInput, 'Me');
-        break
+        newUserInput = await refineUserInput(newUserInput, 'Me');
+        break;
       case 'Cancel':
         saveResultForBashWrapper('ABORTED');
-        break outer;
+        continueProcessing = false;
+        break;
       default:
-        console.log(chalk.red('Unexpected result: ' + result));
+        console.log(chalk.red(`Unexpected result: ${result}`));
         saveResultForBashWrapper('ABORTED');
-        break outer;
+        continueProcessing = false;
+        break;
     }
   }
-}
-function getCmdLineInput() {
-  let args = process.argv
-  args.shift() // first is path to nodejs
-  args.shift() // second is path to the script
-  return args.join(' ').trim()
-}
+};
 
-async function promptIfUserAcceptsCommand(option: CmdLineOption): Promise<UserAction> {
+async function run(openAi: OpenAIApi): Promise<void> {
+  let userInput = getCmdLineInput();
+
+  function startNewContext(): void {
+    clearHistory();
+    userInput = userInput.replace('-n', '').trim();
+  }
+
+  let option = detectOption(userInput);
+
+  if (userInput === '') {
+    console.log(chalk.yellow('No input provided'));
+    saveResultForBashWrapper('ABORTED');
+    return;
+  }
+
   switch (option) {
-    case CmdLineOption.COMMAND: return promptForUserActionAfterCommand()
-    case CmdLineOption.QUESTION: return promptForUserActionAfterQuestion()
+    case CmdLineOption.HELP:
+      printHelp();
+      return;
+    case CmdLineOption.SEARCH_IN_GOOGLE:
+      searchLatestQueryInGoogle(userInput);
+      return;
+    case CmdLineOption.NEW_CONTEXT:
+      startNewContext();
+      option = CmdLineOption.COMMAND;
+      handleAiOptions(openAi, option, userInput);
+      break; // continue as COMMAND
+    default:
+      handleAiOptions(openAi, option, userInput);
   }
 }
 
-async function refineUserInput(userInput: string, label?: string): Promise<string> {
-  userInput = (await prompts.prompt([{
-    type: 'text',
-    name: 'userInput',
-    message: label || 'Refine your query:',
-    default: userInput
-  }])).userInput
+const configStore = new ConfigStore();
 
-  saveUserInputInHistory(userInput)
-
-  return userInput
-}
-
-async function askOpenAiWithContext(userInput: string, openAi: OpenAIApi, option: CmdLineOption): Promise<string> {
-  try {
-    switch (option) {
-      case CmdLineOption.COMMAND: return askOpenAiForCommand(userInput, openAi);
-      case CmdLineOption.QUESTION: return askOpenAiQuestion(userInput, openAi);
-      default: throw new Error('Unexpected option: ' + option);
-    }
-  } catch (error) {
-    printError(error);
-  }
-}
-
-function printError(error): void {
-  if (error.response) {
-    console.log(error.response.status);
-    console.log(error.response.data);
-  } else {
-    console.log(error.message);
-  }
-}
-
-function detectOption(userInput: string): CmdLineOption {
-  if (userInput.startsWith('-h') || userInput.startsWith('--help')) {
-    return CmdLineOption.HELP
-  }
-
-  if (userInput.startsWith('-n') || userInput.startsWith('--new-context')) {
-    return CmdLineOption.NEW_CONTEXT
-  }
-
-  if (userInput.startsWith('-g') || userInput.startsWith('--google')) {
-    return CmdLineOption.SEARCH_IN_GOOGLE
-  }
-
-  if (userInput.startsWith('-q') || userInput.startsWith('--question')) {
-    return CmdLineOption.QUESTION
-  }
-
-  return CmdLineOption.COMMAND
-}
-
-let configStore = new ConfigStore();
 configStore.load().then(() => {
-  (prompts.prompts as any).buttons = args => promptBtn.toPrompt('ButtonsPrompt', args);
+  (prompts.prompts as any).buttons = (args) => promptBtn.toPrompt('ButtonsPrompt', args);
 
   const oaiConfig = new oai.Configuration({
-    apiKey: configStore.useNextKey()
+    apiKey: configStore.useNextKey(),
   });
 
   const openAi = new oai.OpenAIApi(oaiConfig);
 
   run(openAi);
-})
+});
