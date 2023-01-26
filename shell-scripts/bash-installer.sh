@@ -47,6 +47,12 @@ if ! grep -q "ai-shell integration" ~/.bashrc; then
   } >> ~/.bashrc
 fi
 
+# check if directory ~/.config/fish/functions exists
+if [ -d ~/.config/fish/functions ]; then
+    ln -s $PWD/shell-scripts/ai-fish.fish ~/.config/fish/functions/ai.fish
+fi
+
+
 npm install
 npm link --no-save
 
