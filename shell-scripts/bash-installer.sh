@@ -49,6 +49,7 @@ fi
 
 # check if directory ~/.config/fish/functions exists
 if [ -d ~/.config/fish/functions ]; then
+    rm ~/.config/fish/functions/ai.fish
     ln -s $PWD/shell-scripts/ai-fish.fish ~/.config/fish/functions/ai.fish
 fi
 
