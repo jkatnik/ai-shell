@@ -1,4 +1,5 @@
 import * as color from 'kleur';
+
 const checkCommand = (command: string): string => {
   const dangerousInputs: string[] = [
     'rm',
@@ -6,10 +7,12 @@ const checkCommand = (command: string): string => {
     'sudo',
   ];
 
+  let fixedCommand = command;
+
   dangerousInputs.forEach((input) => {
-    const regex = new RegExp(input, "g");
-    command = command.replace(regex, color.red(input));
+    const regex = new RegExp(`\\b${input}\\b`, 'g');
+    fixedCommand = fixedCommand.replace(regex, color.red(input));
   });
-  return command;
-}
+  return fixedCommand;
+};
 export default checkCommand;

@@ -15,6 +15,7 @@ import printHelp from './actions/HelpAction';
 import searchLatestQueryInGoogle from './actions/SearchInGoogle';
 import { detectOption, getCmdLineInput } from './cmdLineUtils';
 import { askOpenAiWithContext } from './OpenAiUtils';
+import commandChecker from './command-checker';
 
 async function promptUserForNextAction(option: CmdLineOption): Promise<UserAction> {
   switch (option) {
@@ -47,7 +48,9 @@ const handleAiOptions = async (
     saveUserInputInHistory(newUserInput);
     const command = await askOpenAiWithContext(newUserInput, openAi, option);
 
-    console.log(`${chalk.grey('\nAI: ') + chalk.bold(command)}\n`);
+    const commandToDisplay = `${commandChecker(command)}`;
+
+    console.log(`${chalk.grey('\nAI: ') + commandToDisplay}\n`);
 
     const result = await promptUserForNextAction(option);
 
