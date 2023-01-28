@@ -20,7 +20,7 @@ export const askOpenAiForCommand = async (userInput: string, openAi: OpenAIApi):
     const completion = await openAi.createCompletion({
       model: 'text-davinci-003',
       prompt,
-      temperature: 0,
+      temperature: 0.1,
       max_tokens: tokensForResponse,
     });
     clearLastLine();

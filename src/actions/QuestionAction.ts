@@ -19,7 +19,7 @@ export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): P
     const completion = await openAi.createCompletion({
       model: 'text-davinci-003',
       prompt,
-      temperature: 0,
+      temperature: 0.5,
       top_p: 1,
       frequency_penalty: 0,
       max_tokens: tokensForResponse,
