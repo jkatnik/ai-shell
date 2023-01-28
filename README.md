@@ -1,22 +1,20 @@
 # AI-Bash
 
-This project solves following problem:
+This project solves thefollowing problem:
 > I love command line!
 > Command line doesn't love me back. 
 > It is a difficult relationship.
 
+It uses OpenAI™ to turn user intention into the appropriate command, making it easier to interact with Bash or other shells.
 
-## Development
-Use Node 16 or highier
-```
-nvm use v16
-```
+![bash demo](demo.webp)
+
 
 ## Installation
 1. Clone this project `git clone git@github.com:jkatnik/ai-bash.git`
 2. Register at https://beta.openai.com/signup
    and [create secret key](https://beta.openai.com/account/api-keys). Note it down. 
-3. On Ubuntu based distributions for extra features, install `xdotool`
+3. On Ubuntu-based distributions, for extra features, install `xdotool`
     ```
     apt install xdotool
     ```
@@ -49,11 +47,10 @@ Ask OpenAI a question
 ai -q Who was the best soccer player ever?
 ```
 
-If OpenAI fails, you can send the last question to google
+If OpenAI™ fails, you can send the last question to google
 ```
 $ ai -g
 ```
-
 
 ## Materials
 
@@ -64,13 +61,18 @@ $ ai -g
 - [OpenAI JS client](https://github.com/openai/openai-node#readme)
 - [why to use `npx link` instead of `npm link`](https://hirok.io/posts/avoid-npm-link)
 
+## Development
+Use Node 16 or higher.
+```
+nvm use v16
+```
+
 ## Backlog
 - refactor
 - unit tests
 - configStore should check if newly entered API key is valid
 - documentation
 - prepare a blog post
-- add animated GIF demo animation to this README file
 - configure license
 - provide OS and shell version in the prompt context
 - -i information (version, file locations, node version, authors, etc)
