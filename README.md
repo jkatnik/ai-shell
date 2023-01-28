@@ -74,7 +74,6 @@ $ ai -g
 - configure license
 - provide OS and shell version in the prompt context
 - -i information (version, file locations, node version, authors, etc)
-- detect dangerous command and highlight them in red
 
 ## Ideas to consider
 
