@@ -1,8 +1,10 @@
 import { OpenAIApi } from 'openai';
 import prompts from 'prompts';
+import chalk from 'chalk';
 import { saveAiOutputInHistory } from '../history';
 import { buildContext, countTokens, printError } from '../OpenAiUtils';
 import { UserAction } from '../types';
+import clearLastLine from '../terminal-utils';
 
 export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): Promise<string> => {
   const tokensForResponse = 1000;
@@ -13,6 +15,7 @@ export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): P
   const prompt = context + currentQuestion;
 
   try {
+    console.log(chalk.grey('Waiting for OpenAI ...'));
     const completion = await openAi.createCompletion({
       model: 'text-davinci-003',
       prompt,
@@ -21,6 +24,7 @@ export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): P
       frequency_penalty: 0,
       max_tokens: tokensForResponse,
     });
+    clearLastLine();
 
     const command = completion.data.choices[0].text.trim();
 
