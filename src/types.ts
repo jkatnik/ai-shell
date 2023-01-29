@@ -6,4 +6,10 @@ export const enum CmdLineOption {
   QUESTION = 'QUESTION',
 }
 
-export type UserAction = 'Execute' | 'Type' | 'Refine' | 'Cancel' | 'AskQuestion'
+export enum UserAction {
+  EXECUTE= 'Execute',
+  TYPE = 'Type',
+  REFINE = 'Refine',
+  CANCEL = 'Cancel',
+  ASK_QUESTION = 'AskQuestion',
+}

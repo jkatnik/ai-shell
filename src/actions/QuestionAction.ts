@@ -44,11 +44,11 @@ export const promptForUserActionAfterQuestion = async (): Promise<UserAction> =>
     choices: [
       {
         title: 'Continue',
-        value: 'AskQuestion',
+        value: UserAction.ASK_QUESTION,
       },
       {
         title: 'Done',
-        value: 'Cancel',
+        value: UserAction.CANCEL,
       }],
   },
 ])
