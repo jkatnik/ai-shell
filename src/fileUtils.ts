@@ -5,7 +5,7 @@ import chalk from 'chalk';
 export const getHome = () => process.env.AI_SHELL_HOME;
 export const getHistoryPath = () => `${getHome()}/ai-history.txt`;
 
-export const prepareTextForSave = (text: string) => btoa(text.trim());
+export const prepareTextForSave = (text: string) => btoa(text?.trim() || '');
 export const parseTextFromHistory = (historyEntry: string) => {
   const [type, base64Text] = historyEntry.split(': ');
 

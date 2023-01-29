@@ -32,7 +32,7 @@ const refineUserInput = async (userInput: string, label?: string): Promise<strin
   type: 'text',
   name: 'userInput',
   message: label || 'Refine your query:',
-  default: userInput,
+  initial: userInput,
 }])).userInput;
 
 const handleAiOptions = async (
@@ -70,6 +70,7 @@ const handleAiOptions = async (
         newUserInput = await refineUserInput(newUserInput, 'Me');
         break;
       case 'Cancel':
+      case undefined:
         saveResultForBashWrapper('ABORTED');
         continueProcessing = false;
         break;
