@@ -1,9 +1,5 @@
 import { encode } from 'gpt-3-encoder';
-import { OpenAIApi } from 'openai';
 import { loadHistory } from './history';
-import { CmdLineOption } from './types';
-import { askOpenAiForCommand } from './actions/CommandAction';
-import { askOpenAiQuestion } from './actions/QuestionAction';
 
 export const countTokens = (question: string) => encode(question).length;
 
@@ -33,20 +29,5 @@ export const printError = (error): void => {
     console.log(error.response.data);
   } else {
     console.log(error.message);
-  }
-};
-
-export const askOpenAiWithContext = async (
-  userInput: string,
-  openAi: OpenAIApi,
-  option: CmdLineOption,
-): Promise<string> => {
-  switch (option) {
-    case CmdLineOption.COMMAND:
-      return askOpenAiForCommand(userInput, openAi);
-    case CmdLineOption.QUESTION:
-      return askOpenAiQuestion(userInput, openAi);
-    default:
-      throw new Error(`Unexpected option: ${option}`);
   }
 };

@@ -1,10 +1,11 @@
 import { OpenAIApi } from 'openai';
 import prompts from 'prompts';
-import chalk from 'chalk';
-import { saveAiOutputInHistory } from '../history';
+import * as color from 'kleur';
+import { saveAiOutputInHistory, saveUserInputInHistory } from '../history';
 import { buildContext, countTokens, printError } from '../OpenAiUtils';
 import { UserAction } from '../types';
 import clearLastLine from '../terminal-utils';
+import { saveResultForBashWrapper } from '../fileUtils';
 
 export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): Promise<string> => {
   const tokensForResponse = 1000;
@@ -15,7 +16,7 @@ export const askOpenAiQuestion = async (userInput: string, openAi: OpenAIApi): P
   const prompt = context + currentQuestion;
 
   try {
-    console.log(chalk.grey('Waiting for OpenAI ...'));
+    console.log(color.grey('Waiting for OpenAI ...'));
     const completion = await openAi.createCompletion({
       model: 'text-davinci-003',
       prompt,
@@ -53,3 +54,38 @@ export const promptForUserActionAfterQuestion = async (): Promise<UserAction> =>
   },
 ])
   .then((answer) => answer.action);
+
+const refineUserInput = async (): Promise<string> => (await prompts.prompt([{
+  type: 'text',
+  name: 'userInput',
+  message: 'Me:',
+}])).userInput;
+
+const handleQuestion = async (
+  openAi: OpenAIApi,
+  userInput: string,
+): Promise<void> => {
+  let newUserInput = userInput;
+  let continueProcessing = true;
+
+  while (continueProcessing) {
+    /* eslint-disable no-await-in-loop */
+    saveUserInputInHistory(newUserInput);
+
+    const answer = await askOpenAiQuestion(newUserInput, openAi);
+
+    console.log(`${color.grey('\nAI: ') + answer}\n`);
+
+    switch (await promptForUserActionAfterQuestion()) {
+      case 'AskQuestion':
+        newUserInput = await refineUserInput();
+        break;
+      default:
+        saveResultForBashWrapper('ABORTED');
+        continueProcessing = false;
+        break;
+    }
+  }
+};
+
+export default handleQuestion;

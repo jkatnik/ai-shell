@@ -1,6 +1,6 @@
 import { atob, btoa } from 'buffer';
 import * as fs from 'fs';
-import chalk from 'chalk';
+import * as color from 'kleur';
 
 export const getHome = () => process.env.AI_SHELL_HOME;
 export const getHistoryPath = () => `${getHome()}/ai-history.txt`;
@@ -27,7 +27,7 @@ export const saveResultForBashWrapper = (commandType: CommandType, command?: str
 
 export const clearHistory = (): void => {
   fs.truncateSync(getHistoryPath());
-  console.log(chalk.white('History cleared'));
+  console.log(color.white('History cleared'));
 };
 
 export const isXdotoolInstalled = (): boolean => fs.existsSync('/usr/bin/xdotool');

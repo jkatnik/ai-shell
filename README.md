@@ -68,8 +68,6 @@ nvm use v16
 ```
 
 ## Backlog
-- refactor
-- unit tests
 - configStore should check if newly entered API key is valid
 - documentation
 - prepare a blog post
