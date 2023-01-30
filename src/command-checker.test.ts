@@ -1,7 +1,6 @@
-import { describe, expect, test } from '@jest/globals';
 import checkCommand from './command-checker';
 
-describe('when testing checkCommand2', () => {
+describe('when testing checkCommand', () => {
   describe('with safe input', () => {
     test('should return the same command', () => {
       expect(checkCommand('ls -al')).toBe('ls -al');

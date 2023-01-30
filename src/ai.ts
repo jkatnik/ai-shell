@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk';
+import * as color from 'kleur';
 import * as oai from 'openai';
 import { OpenAIApi } from 'openai';
 import prompts from 'prompts';
@@ -50,7 +50,7 @@ const handleAiOptions = async (
 
     const commandToDisplay = `${commandChecker(command)}`;
 
-    console.log(`${chalk.grey('\nAI: ') + commandToDisplay}\n`);
+    console.log(`${color.grey('\nAI: ') + commandToDisplay}\n`);
 
     const result = await promptUserForNextAction(option);
 
@@ -75,7 +75,7 @@ const handleAiOptions = async (
         continueProcessing = false;
         break;
       default:
-        console.log(chalk.red(`Unexpected result: ${result}`));
+        console.log(color.red(`Unexpected result: ${result}`));
         saveResultForBashWrapper('ABORTED');
         continueProcessing = false;
         break;
@@ -94,7 +94,7 @@ async function run(openAi: OpenAIApi): Promise<void> {
   let option = detectOption(userInput);
 
   if (userInput === '') {
-    console.log(chalk.yellow('No input provided'));
+    console.log(color.yellow('No input provided'));
     saveResultForBashWrapper('ABORTED');
     return;
   }
