@@ -4,8 +4,7 @@ import prompts from 'prompts';
 import { getHome } from './fileUtils';
 
 interface Config {
-  apiKeys: string[]
-  lastKeyUsed: string
+  apiKey: string;
 }
 
 class ConfigStore {
@@ -28,8 +27,7 @@ It will be saved as a plain text in ${this.configFilePath}.
 Enter Key:`,
       }]).then((answer) => {
         this.config = {
-          apiKeys: [answer.apiKey],
-          lastKeyUsed: answer.apiKey,
+          apiKey: answer.apiKey,
         };
         this.save();
       });
@@ -39,16 +37,12 @@ Enter Key:`,
     this.config = yaml.load(yamlString) as Config;
   }
 
-  useNextKey() {
-    const index = this.config.apiKeys.indexOf(this.config.lastKeyUsed);
-    const nextIndex = (index + 1) % this.config.apiKeys.length;
-    this.config.lastKeyUsed = this.config.apiKeys[nextIndex] || '';
-    this.save();
-    return this.config.apiKeys[nextIndex];
+  private save() {
+    fs.writeFileSync(this.configFilePath, yaml.dump(this.config));
   }
 
-  save() {
-    fs.writeFileSync(this.configFilePath, yaml.dump(this.config));
+  getApiKey(): string {
+    return this.config.apiKey;
   }
 }
 

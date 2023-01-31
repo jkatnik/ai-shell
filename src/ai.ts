@@ -44,7 +44,7 @@ configStore.load().then(() => {
   (prompts.prompts as any).buttons = (args) => promptBtn.toPrompt('ButtonsPrompt', args);
 
   const oaiConfig = new oai.Configuration({
-    apiKey: configStore.useNextKey(),
+    apiKey: configStore.getApiKey(),
   });
 
   const openAi = new oai.OpenAIApi(oaiConfig);
