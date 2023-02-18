@@ -7,10 +7,14 @@ import { UserAction } from '../types';
 import { isXdotoolInstalled, saveResultForBashWrapper } from '../fileUtils';
 import clearLastLine from '../terminal-utils';
 import commandChecker from '../command-checker';
+import getSystemDescription from '../os-utils';
 
 const askOpenAiForCommand = async (userInput: string, openAi: OpenAIApi): Promise<string> => {
   const tokensForResponse = 200;
-  const currentQuestion = `Write single bash command in one line. Nothing else! ${userInput}.\n`;
+  const systemDescription = getSystemDescription();
+  const shell = process.env.SHELL || 'bash';
+  const currentQuestion = `I'm on ${systemDescription}. `
+      + `Write single ${shell} command in one line. Nothing else! ${userInput}.\n`;
 
   const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion);
   const context = buildContext(freeTokens);
