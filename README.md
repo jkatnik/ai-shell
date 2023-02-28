@@ -1,4 +1,4 @@
-# AI-Bash
+# AI-shell
 
 This project solves thefollowing problem:
 > I love command line!
@@ -11,7 +11,7 @@ It uses OpenAI™ to turn user intention into the appropriate command, making it
 
 
 ## Installation
-1. Clone this project `git clone git@github.com:jkatnik/ai-bash.git`
+1. Clone this project `git clone git@github.com:jkatnik/ai-shell.git`
 2. Register at https://beta.openai.com/signup
    and [create secret key](https://beta.openai.com/account/api-keys). Note it down. 
 3. On Ubuntu-based distributions, for extra features, install `xdotool`
