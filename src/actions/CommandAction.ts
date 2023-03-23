@@ -8,12 +8,13 @@ import { isXdotoolInstalled, saveResultForBashWrapper } from '../fileUtils';
 import clearLastLine from '../terminal-utils';
 import commandChecker from '../command-checker';
 import getSystemDescription from '../os-utils';
+import kleur from "kleur";
 
 const askOpenAiForCommand = async (userInput: string, openAi: OpenAIApi): Promise<string> => {
   const tokensForResponse = 200;
   const systemDescription = getSystemDescription();
   const shell = process.env.SHELL || 'bash';
-  const currentQuestion = `I'm on ${systemDescription}. `
+  const currentQuestion = `You are command line assistant for ${systemDescription}. `
       + `Write single ${shell} command in one line. Nothing else! ${userInput}.\n`;
 
   const freeTokens = 4000 - tokensForResponse - countTokens(currentQuestion);
@@ -22,15 +23,20 @@ const askOpenAiForCommand = async (userInput: string, openAi: OpenAIApi): Promis
 
   try {
     console.log(color.grey('Waiting for OpenAI ...'));
-    const completion = await openAi.createCompletion({
-      model: 'text-davinci-003',
-      prompt,
+    const completion = await openAi.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
       temperature: 0.1,
       max_tokens: tokensForResponse,
     });
     clearLastLine();
 
-    const command = completion.data.choices[0].text.trim();
+    const command = completion.data.choices[0].message.content.trim()
 
     saveAiOutputInHistory(command);
 
@@ -49,12 +55,12 @@ const promptForUserActionAfterCommand = async (): Promise<UserAction> => prompts
 
     choices: [
       {
-        title: 'Execute',
+        title: kleur.red('Execute'),
         value: UserAction.EXECUTE,
         description: 'Exit and execute proposed command.',
       },
       {
-        title: 'Type',
+        title: kleur.green('Type'),
         value: UserAction.TYPE,
         disabled: !isXdotoolInstalled(),
         description: 'Exit and type in proposed command but without executing it.',
